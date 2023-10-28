@@ -8,6 +8,8 @@ const { createServer } = require("http");
 const { wasmTextPlugin } = require("./scripts/esbuild/wasm-text");
 const { uxntalPlugin } = require("./scripts/esbuild/uxntal");
 
+const version = JSON.parse(fs.readFileSync("package.json")).version;
+
 let dev = false;
 let watch = false;
 for (const arg of process.argv.slice(2)) {
@@ -74,6 +76,9 @@ const packageBuildOptions = {
   ...buildOptions,
   entryPoints: [path.join(__dirname, "src", "uxn")],
   outfile: path.join(__dirname, "build", "uxn-wasm.js"),
+  banner: {
+    js: `// Uxn.wasm v${version}\n// https://github.com/remko/uxn.wasm`,
+  },
   format: "iife",
   globalName: "UxnWASM",
 };
