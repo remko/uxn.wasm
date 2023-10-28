@@ -7,12 +7,7 @@ export default [
   {
     name: "mandelbrot",
     init: async (uxn) => {
-      await uxn.init({
-        deo: () => {},
-        dei: (port) => {
-          return uxn.dev[port];
-        },
-      });
+      await uxn.init();
     },
     run: (uxn) => {
       uxn.load(mandelbrot);
@@ -34,9 +29,6 @@ export default [
               break;
           }
         },
-        dei: (port) => {
-          return uxn.dev[port];
-        },
       });
     },
     run: (uxn) => {
@@ -51,8 +43,9 @@ export default [
       const output = new TextDecoder().decode(
         Uint8Array.from(uxn._prime32.output)
       );
-      if (output !== "fffffffb 01\n") {
-        throw Error(`unexpected output: ${output}`);
+      const expected = "fffffffb 01\n".repeat(14);
+      if (output !== expected) {
+        throw Error(`unexpected output: '${output}' != '${expected}`);
       }
     },
   },

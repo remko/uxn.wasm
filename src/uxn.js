@@ -8,8 +8,20 @@ function Uxn() {
   };
 
   this.init = async (system) => {
-    core = (await WebAssembly.instantiate(wasmModule, { system })).instance
-      .exports;
+    system = system != null ? system : {};
+    core = (
+      await WebAssembly.instantiate(wasmModule, {
+        system: {
+          deo: system.deo != null ? system.deo : () => {},
+          dei:
+            system.dei != null
+              ? system.dei
+              : (port) => {
+                  return this.dev[port];
+                },
+        },
+      })
+    ).instance.exports;
     this.ram = new Uint8Array(core.memory.buffer, 0, 0x10300);
     this.dev = new Uint8Array(core.memory.buffer, 0x10200, 0x100);
     wst = new Uint8Array(core.memory.buffer, 0x10000, 0xff);
