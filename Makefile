@@ -31,6 +31,10 @@ build/%.wasm: src/%.wat
 	mkdir -p build
 	$(WAT2WASM) $(WAT2WASM_FLAGS) -o $@ $<
 
+update-tests:
+	curl -o src/tests/opctest.tal https://git.sr.ht/~rabbits/uxn-utils/blob/main/cli/opctest/opctest.tal
+	curl -o src/benchmarks/mandelbrot.tal https://git.sr.ht/~rabbits/uxn/blob/main/projects/examples/demos/mandelbrot.tal
+
 clean:
 	-rm -rf build public/uxn-wasm
 
