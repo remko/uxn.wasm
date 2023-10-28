@@ -758,43 +758,47 @@ def replace_set(m, is_rst, is_keep, flip):
         return ""
 
 
-out = """(import "system" "deo" (func $deo (param i32) (param i32)))
-(import "system" "dei" (func $dei (param i32) (result i32)))
+out = """(module $uxn
+  (import "system" "deo" (func $deo (param i32) (param i32)))
+  (import "system" "dei" (func $dei (param i32) (result i32)))
 
-(memory (export "memory") 2)
+  (memory (export "memory") 2)
 
-(func (export "eval") (param $pc i32)
-  (local $ins i32)
-  (local $t i32)
-  (local $n i32)
-  (local $l i32)
-  (if (i32.eqz (local.get $pc)) (then (return)))
-  (if (i32.load8_u (i32.const 0x1020f)) (then (return)))
-  (block $endLoop
-    (loop $loop
-      (local.set $ins (i32.load8_u (local.get $pc)))
-      (local.set $pc (i32.add (local.get $pc) (i32.const 1)))
+  (func (export "eval") (param $pc i32)
+    (local $ins i32)
+    (local $t i32)
+    (local $n i32)
+    (local $l i32)
+    (if (i32.eqz (local.get $pc)) (then (return)))
+    (if (i32.load8_u (i32.const 0x1020f)) (then (return)))
+    (block $endLoop
+      (loop $loop
+        (local.set $ins (i32.load8_u (local.get $pc)))
+        (local.set $pc (i32.add (local.get $pc) (i32.const 1)))
+
+        ;; Uxntal Opcodes
+        ;; https://wiki.xxiivv.com/site/uxntal_opcodes.html
 """
 
 for i, ins in enumerate(reversed(instructions)):
     if i % 16 == 0:
-        out += "\n      "
+        out += "\n        "
     out += "(block $%s " % ins[0]
 out += "\n"
-out += "      (br_table"
+out += "        (br_table"
 for i, ins in enumerate(instructions):
     if i % 16 == 0:
-        out += "\n        "
+        out += "\n          "
     out += "$%-6s " % ins[0]
 out += "\n"
-out += "        $BRK\n"
-out += "        (local.get $ins))\n\n"
+out += "          $BRK\n"
+out += "          (local.get $ins))\n\n"
 
 for ins, inss in enumerate(instructions):
     insn = inss[0]
     mode_keep = bool(ins & 0x80)
     mode_rst = bool(ins & 0x40)
-    out += "      );; %s\n" % insn
+    out += "        );; %s\n" % insn
     if inss[1] is not None:
         code = inss[1][1:]
     else:
@@ -861,26 +865,26 @@ for ins, inss in enumerate(instructions):
                    r"(i32.shr_s (i32.shl \1 (i32.const 24)) (i32.const 24))",
                    c)
         ncode += c + "\n"
-    code = indent(ncode.rstrip(), 6)
+    code = indent(ncode.rstrip(), 8)
     if len(code) > 0:
         out += code + "\n"
     if insn == "BRK":
-        out += "      (br $endLoop)\n\n"
+        out += "        (br $endLoop)\n\n"
     else:
-        out += "      (br $loop)\n\n"
+        out += "        (br $loop)\n\n"
 
-out += """      ));; end
-    )
+out += """        )));; end
 
-(func $swap (param $v i32) (result i32)
-  (i32.or
-    (i32.shl (i32.and (local.get $v) (i32.const 0xff)) (i32.const 8))
-    (i32.shr_u (i32.and (local.get $v) (i32.const 0xff00)) (i32.const 8))))
+  (func $swap (param $v i32) (result i32)
+    (i32.or
+      (i32.shl (i32.and (local.get $v) (i32.const 0xff)) (i32.const 8))
+      (i32.shr_u (i32.and (local.get $v) (i32.const 0xff00)) (i32.const 8))))
 
-(global $wstp (mut i32) (i32.const 0x100ff))
-(global $rstp (mut i32) (i32.const 0x101ff))
+  (global $wstp (mut i32) (i32.const 0x100ff))
+  (global $rstp (mut i32) (i32.const 0x101ff))
 
-(func (export "wstp") (result i32) (global.get $wstp))
-(func (export "rstp") (result i32) (global.get $rstp))
+  (func (export "wstp") (result i32) (global.get $wstp))
+  (func (export "rstp") (result i32) (global.get $rstp))
+)
 """
 print(out)
