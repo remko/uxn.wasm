@@ -392,6 +392,22 @@ function loadTests() {
         });
       });
 
+      describe("DIV", () => {
+        it("should support division by zero", () => {
+          uxn.load([LIT, 3, LIT, 0, DIV]);
+          uxn.eval(PROGRAM_OFFSET);
+          expect(wst()).to.eql([0]);
+        });
+      });
+
+      describe("DIV2", () => {
+        it("should support division by zero", () => {
+          uxn.load([LIT2, 3, 3, LIT2, 0, 0, DIV2]);
+          uxn.eval(PROGRAM_OFFSET);
+          expect(wst()).to.eql([0, 0]);
+        });
+      });
+
       ////////////////////////////////////////////////////////////////////////////////
 
       describe("uxn instruction test suite", () => {

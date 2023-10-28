@@ -246,7 +246,7 @@
         (local.set $t (i32.load8_u (global.get $wstp)))
         (local.set $n (i32.load8_u (i32.add (global.get $wstp) (i32.const 1))))
         (global.set $wstp (i32.sub (global.get $wstp) (i32.const -1)))
-        (i32.store8 (global.get $wstp) (i32.div_u (local.get $n) (local.get $t)))
+        (i32.store8 (global.get $wstp) (if (result i32) (i32.eqz (local.get $t)) (then (i32.const 0)) (else (i32.div_u (local.get $n) (local.get $t)))))
         (br $loop)
 
         );; AND
@@ -477,7 +477,7 @@
         (local.set $t (i32.load16_u (global.get $wstp)))
         (local.set $n (i32.load16_u (i32.add (global.get $wstp) (i32.const 2))))
         (global.set $wstp (i32.sub (global.get $wstp) (i32.const -2)))
-        (i32.store16 (global.get $wstp) (i32.div_u (local.get $n) (local.get $t)))
+        (i32.store16 (global.get $wstp) (if (result i32) (i32.eqz (local.get $t)) (then (i32.const 0)) (else (i32.div_u (local.get $n) (local.get $t)))))
         (br $loop)
 
         );; AND2
@@ -702,7 +702,7 @@
         (local.set $t (i32.load8_u (global.get $rstp)))
         (local.set $n (i32.load8_u (i32.add (global.get $rstp) (i32.const 1))))
         (global.set $rstp (i32.sub (global.get $rstp) (i32.const -1)))
-        (i32.store8 (global.get $rstp) (i32.div_u (local.get $n) (local.get $t)))
+        (i32.store8 (global.get $rstp) (if (result i32) (i32.eqz (local.get $t)) (then (i32.const 0)) (else (i32.div_u (local.get $n) (local.get $t)))))
         (br $loop)
 
         );; ANDr
@@ -929,7 +929,7 @@
         (local.set $t (i32.load16_u (global.get $rstp)))
         (local.set $n (i32.load16_u (i32.add (global.get $rstp) (i32.const 2))))
         (global.set $rstp (i32.sub (global.get $rstp) (i32.const -2)))
-        (i32.store16 (global.get $rstp) (i32.div_u (local.get $n) (local.get $t)))
+        (i32.store16 (global.get $rstp) (if (result i32) (i32.eqz (local.get $t)) (then (i32.const 0)) (else (i32.div_u (local.get $n) (local.get $t)))))
         (br $loop)
 
         );; AND2r
@@ -1151,7 +1151,7 @@
         (local.set $t (i32.load8_u (global.get $wstp)))
         (local.set $n (i32.load8_u (i32.add (global.get $wstp) (i32.const 1))))
         (global.set $wstp (i32.sub (global.get $wstp) (i32.const 1)))
-        (i32.store8 (global.get $wstp) (i32.div_u (local.get $n) (local.get $t)))
+        (i32.store8 (global.get $wstp) (if (result i32) (i32.eqz (local.get $t)) (then (i32.const 0)) (else (i32.div_u (local.get $n) (local.get $t)))))
         (br $loop)
 
         );; ANDk
@@ -1371,7 +1371,7 @@
         (local.set $t (i32.load16_u (global.get $wstp)))
         (local.set $n (i32.load16_u (i32.add (global.get $wstp) (i32.const 2))))
         (global.set $wstp (i32.sub (global.get $wstp) (i32.const 2)))
-        (i32.store16 (global.get $wstp) (i32.div_u (local.get $n) (local.get $t)))
+        (i32.store16 (global.get $wstp) (if (result i32) (i32.eqz (local.get $t)) (then (i32.const 0)) (else (i32.div_u (local.get $n) (local.get $t)))))
         (br $loop)
 
         );; AND2k
@@ -1593,7 +1593,7 @@
         (local.set $t (i32.load8_u (global.get $rstp)))
         (local.set $n (i32.load8_u (i32.add (global.get $rstp) (i32.const 1))))
         (global.set $rstp (i32.sub (global.get $rstp) (i32.const 1)))
-        (i32.store8 (global.get $rstp) (i32.div_u (local.get $n) (local.get $t)))
+        (i32.store8 (global.get $rstp) (if (result i32) (i32.eqz (local.get $t)) (then (i32.const 0)) (else (i32.div_u (local.get $n) (local.get $t)))))
         (br $loop)
 
         );; ANDkr
@@ -1813,7 +1813,7 @@
         (local.set $t (i32.load16_u (global.get $rstp)))
         (local.set $n (i32.load16_u (i32.add (global.get $rstp) (i32.const 2))))
         (global.set $rstp (i32.sub (global.get $rstp) (i32.const 2)))
-        (i32.store16 (global.get $rstp) (i32.div_u (local.get $n) (local.get $t)))
+        (i32.store16 (global.get $rstp) (if (result i32) (i32.eqz (local.get $t)) (then (i32.const 0)) (else (i32.div_u (local.get $n) (local.get $t)))))
         (br $loop)
 
         );; AND2kr

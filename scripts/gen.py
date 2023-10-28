@@ -224,7 +224,7 @@ instructions = [
 (local.set $t (#T))
 (local.set $n (#N))
 (#set 2 -1)
-(#T! (i32.div_u (local.get $n) (local.get $t)))
+(#T! (if (result i32) (i32.eqz (local.get $t)) (then (i32.const 0)) (else (i32.div_u (local.get $n) (local.get $t)))))
 """
     ],
     [
@@ -487,7 +487,7 @@ instructions = [
 (local.set $t (#T2))
 (local.set $n (#N2))
 (#set 4 -2)
-(#T2! (i32.div_u (local.get $n) (local.get $t)))
+(#T2! (if (result i32) (i32.eqz (local.get $t)) (then (i32.const 0)) (else (i32.div_u (local.get $n) (local.get $t)))))
 """
     ],
     [

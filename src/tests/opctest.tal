@@ -107,8 +107,8 @@ JMP2r
 	=op-mul/a =op-mul/b =op-mul/c =op-mul/d
 	=op-mul/e =op-mul/f =op-mul/g =op-mul/h ]
 =op-div [
-	=op-div/a =op-div/b =op-div/c =op-div/d
-	=op-div/e =op-div/f =op-div/g =op-div/h ]
+	=op-div/a =op-div/b =op-div/c =op-div/d =op-div/e
+	=op-div/f =op-div/g =op-div/h =op-div/h =op-div/i ]
 =op-inc [
 	=op-inc/a =op-inc/b =op-inc/c =op-inc/d
 	=op-inc/e =op-inc/f =op-inc/g =op-inc/h ]
@@ -227,10 +227,12 @@ JMP2r
 	&b #20 #20 DIV [ #01 ] EQU JMP2r
 	&c #34 #01 DIV [ #34 ] EQU JMP2r
 	&d #02 #ef DIV [ #00 ] EQU JMP2r
-	&e #1000 #0040 DIV2 [ #0040 ] EQU2 JMP2r
-	&f #abcd #1234 DIV2 [ #0009 ] EQU2 JMP2r
-	&g #8000 #0200 DIV2 [ #0040 ] EQU2 JMP2r
-	&h #2222 #0003 DIV2 [ #0b60 ] EQU2 JMP2r
+	&e #02 #00 DIV [ #00 ] EQU JMP2r
+	&f #1000 #0040 DIV2 [ #0040 ] EQU2 JMP2r
+	&g #abcd #1234 DIV2 [ #0009 ] EQU2 JMP2r
+	&h #8000 #0200 DIV2 [ #0040 ] EQU2 JMP2r
+	&i #2222 #0003 DIV2 [ #0b60 ] EQU2 JMP2r
+	&j #0202 #0000 DIV2 [ #0000 ] EQU2 JMP2r
 @op-inc ;Dict/inc !set
 	&a #01 INC [ #02 ] EQU JMP2r
 	&b #ff INC [ #00 ] EQU JMP2r
