@@ -72,7 +72,7 @@ const buildOptions = {
 
 const packageBuildOptions = {
   ...buildOptions,
-  entryPoints: [path.join(__dirname, "uxn")],
+  entryPoints: [path.join(__dirname, "src", "uxn")],
   outfile: path.join(__dirname, "build", "uxn-wasm.js"),
   format: "iife",
   globalName: "UxnWASM",
@@ -80,10 +80,9 @@ const packageBuildOptions = {
 
 let webBuildOptions = {
   ...buildOptions,
-  entryPoints: [path.join(__dirname, "tests", "tests")],
+  entryPoints: [path.join(__dirname, "src", "tests", "tests")],
   entryNames: dev ? "[name]" : "[name]-c$[hash]",
   assetNames: "[name]-c$[hash]",
-  // target: "es6",
   outdir: path.join(__dirname, "public/uxn-wasm/dist"),
   publicPath: "/uxn-wasm/dist",
   external: ["fs", "stream", "util", "events", "path"],

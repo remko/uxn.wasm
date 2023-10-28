@@ -10,7 +10,7 @@ endif
 all: build
 
 .PHONY: build
-build: uxn.wasm
+build: build/uxn.wasm
 	./build.js $(BUILD_FLAGS)
 
 dev:
@@ -23,11 +23,12 @@ test:
 test-dev:
 	./test.js --watch
 
-%.wasm: %.wat
+build/%.wasm: src/%.wat
+	mkdir -p build
 	$(WAT2WASM) $(WAT2WASM_FLAGS) -o $@ $<
 
 clean:
-	-rm -rf build public/uxn-wasm uxn.wasm
+	-rm -rf build public/uxn-wasm
 
 lint:
 	$(ESLINT) .

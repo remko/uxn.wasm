@@ -26,7 +26,7 @@ function runTests() {
 const buildOptions = {
   bundle: true,
   logLevel: "warning",
-  entryPoints: [path.join(__dirname, "tests", "tests.node")],
+  entryPoints: [path.join(__dirname, "src", "tests", "tests.node")],
   target: "node17",
   outdir: path.join(__dirname, "build"),
   external: ["fs", "stream", "util", "events", "path"],

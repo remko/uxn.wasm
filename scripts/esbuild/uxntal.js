@@ -22,7 +22,6 @@ function uxntalPlugin() {
         };
       });
       build.onLoad({ filter: /.*/, namespace: "uxntal" }, async (args) => {
-        // console.log("wat: compiling %s", args.path);
         const r = await exec(`uxnasm ${args.path} -`, {
           encoding: "buffer",
         });
