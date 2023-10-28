@@ -1,8 +1,6 @@
 import wasmModule from "./uxn.wat";
 
 function Uxn() {
-  this.dev = 0x10200;
-
   let core, wstd, rstd;
 
   const reset = () => {
@@ -12,6 +10,7 @@ function Uxn() {
   this.init = async (system) => {
     core = (await WebAssembly.instantiate(wasmModule, { system })).instance;
     this.ram = new Uint8Array(core.exports.memory.buffer, 0, 0x10300);
+    this.dev = new Uint8Array(core.exports.memory.buffer, 0x10200, 0x100);
     wstd = new Uint8Array(core.exports.memory.buffer, 0x10000, 0xff);
     rstd = new Uint8Array(core.exports.memory.buffer, 0x10100, 0xff);
     return this;
@@ -27,23 +26,6 @@ function Uxn() {
 
   this.eval = (addr) => {
     core.exports.eval(addr);
-  };
-
-  this.poke8 = (addr, val) => {
-    this.ram[addr] = val;
-  };
-
-  this.poke16 = (addr, val) => {
-    this.ram[addr] = val >> 8;
-    this.ram[addr + 1] = val;
-  };
-
-  this.peek8 = (addr) => {
-    return this.ram[addr];
-  };
-
-  this.peek16 = (addr) => {
-    return (this.ram[addr] << 8) + this.ram[addr + 1];
   };
 
   this.wst = {
@@ -62,13 +44,6 @@ function Uxn() {
     ptr: () => {
       return 0x101ff - core.exports.rstp();
     },
-  };
-
-  this.getdev = (port) => {
-    return this.ram[this.dev + port];
-  };
-  this.setdev = (port, val) => {
-    this.ram[this.dev + port] = val;
   };
 }
 

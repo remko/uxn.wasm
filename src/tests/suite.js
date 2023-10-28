@@ -477,7 +477,7 @@ function loadTests() {
       describe("eval", () => {
         it("should return on system error code", () => {
           uxn.load([LIT, 10]);
-          uxn.poke8(uxn.dev + 0xf, 0x1);
+          uxn.dev[0xf] = 0x1;
           uxn.eval(PROGRAM_OFFSET);
           expect(wst()).to.eql([]);
         });

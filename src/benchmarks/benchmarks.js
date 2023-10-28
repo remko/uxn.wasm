@@ -26,7 +26,7 @@ startButtonEl.onclick = async () => {
     await uxn.init({
       deo: () => {},
       dei: (port) => {
-        return uxn.ram[uxn.dev + port];
+        return uxn.dev[port];
       },
     });
 
