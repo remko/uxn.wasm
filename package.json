@@ -1,6 +1,6 @@
 {
   "name": "uxn.wasm",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "index.js",
   "author": "Remko Tronçon <remko@el-tramo.be>",
   "license": "MIT",
