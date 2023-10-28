@@ -3,6 +3,7 @@
 import Uxn from "../uxn";
 import { expect } from "chai";
 import testsTAL from "./tests.tal";
+import opctestTAL from "./opctest.tal";
 
 const [
   BRK,
@@ -415,6 +416,35 @@ function loadTests() {
             succeeded + failed
           } tests failed. Results:\n${result}`;
           expect(complete).to.eql(true, msg);
+          expect(failed).to.eql(0, msg);
+        });
+      });
+
+      ////////////////////////////////////////////////////////////////////////////////
+
+      describe("opctest.tal", () => {
+        it("should pass", () => {
+          let output = [];
+          let complete = false;
+          deo = (port, value) => {
+            if (port == 0x18) {
+              output.push(value);
+            } else if (port == 0x0f) {
+              complete = true;
+            }
+          };
+          uxn.load(opctestTAL);
+          uxn.eval(PROGRAM_OFFSET);
+
+          const result = new TextDecoder().decode(Uint8Array.from(output));
+          const succeeded = (result.match(/Ok/g) || "").length;
+          const failed = (result.match(/failed/g) || "").length;
+
+          const msg = `${failed}/${
+            succeeded + failed
+          } tests failed. Results:\n${result}`;
+          expect(complete).to.eql(true, msg);
+          expect(succeeded).to.be.greaterThan(0);
           expect(failed).to.eql(0, msg);
         });
       });
