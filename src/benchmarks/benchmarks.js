@@ -1,51 +1,53 @@
-import mandelbrot from "./mandelbrot.tal";
 import Uxn from "../uxn";
-
-const DEV_OFFSET = 0x10200;
-const PROGRAM_OFFSET = 0x100;
+import suite from "./suite";
 
 document.body.innerHTML = `
 <h1>Uxn.wasm Benchmarks</h1>
 <div>
   <button id="startButton">Start</button>
-  <table>
-    <tr id="mandelbrotResults"></tr>
+  <table id="results">
   </table>
 </div>
 `;
 const startButtonEl = document.getElementById("startButton");
-const mandelbrotResultsEl = document.getElementById("mandelbrotResults");
+const resultsEl = document.getElementById("results");
 
-function runMandelbrot(uxn) {
-  uxn.load(mandelbrot);
-  uxn.eval(PROGRAM_OFFSET);
-}
+startButtonEl.onclick = async () => {
+  startButtonEl.disabled = true;
+  resultsEl.replaceChildren();
+  for (const b of suite) {
+    const trEl = document.createElement("table");
+    resultsEl.appendChild(trEl);
+    const thEl = document.createElement("th");
+    thEl.appendChild(document.createTextNode(b.name));
+    trEl.appendChild(thEl);
 
-async function runMandelbrotBenchmark() {
-  try {
-    startButtonEl.disabled = true;
     const uxn = new Uxn();
     await uxn.init({
       deo: () => {},
       dei: (port) => {
-        return uxn.ram[DEV_OFFSET + port];
+        return uxn.ram[uxn.dev + port];
       },
     });
-    mandelbrotResultsEl.innerHTML = "<th>Mandelbrot</th>";
-    for (let i = 0; i < 5; i++) {
-      const el = document.createElement("td");
-      mandelbrotResultsEl.appendChild(el);
-      el.appendChild(document.createTextNode("⌛️"));
-      const t1 = performance.now();
-      runMandelbrot(uxn);
-      const t2 = performance.now();
-      el.innerHTML = ((t2 - t1) / 1000.0).toFixed(2) + "s";
-    }
-  } finally {
-    startButtonEl.disabled = false;
-  }
-}
 
-startButtonEl.onclick = () => {
-  runMandelbrotBenchmark();
+    for (let i = 0; i < 5; i++) {
+      const tdEl = document.createElement("td");
+      const valueEl = document.createTextNode("⌛️");
+      tdEl.appendChild(valueEl);
+      trEl.appendChild(tdEl);
+      let value;
+
+      try {
+        const t1 = performance.now();
+        b.run(uxn);
+        const t2 = performance.now();
+        value = ((t2 - t1) / 1000.0).toFixed(2) + "s";
+      } catch (e) {
+        console.error(e);
+        value = "error: " + e;
+      }
+      tdEl.replaceChild(document.createTextNode(value), valueEl);
+    }
+  }
+  startButtonEl.disabled = false;
 };

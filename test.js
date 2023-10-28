@@ -8,10 +8,14 @@ const { uxntalPlugin } = require("./scripts/esbuild/uxntal");
 const Mocha = require("mocha");
 
 let watch = false;
+let benchmarks = false;
 for (const arg of process.argv.slice(2)) {
   switch (arg) {
     case "--watch":
       watch = true;
+      break;
+    case "--benchmarks":
+      benchmarks = true;
       break;
   }
 }
@@ -26,7 +30,6 @@ function runTests() {
 const buildOptions = {
   bundle: true,
   logLevel: "warning",
-  entryPoints: [path.join(__dirname, "src", "tests", "tests.node")],
   target: "node17",
   outdir: path.join(__dirname, "build"),
   external: ["fs", "stream", "util", "events", "path"],
@@ -36,11 +39,15 @@ const buildOptions = {
     ".rom": "binary",
   },
   sourcemap: true,
-  plugins: [
-    wasmTextPlugin({ debug: true }),
-    uxntalPlugin(),
+  plugins: [wasmTextPlugin({ debug: true }), uxntalPlugin()],
+};
+
+const testBuildOptions = {
+  ...buildOptions,
+  entryPoints: [path.join(__dirname, "src", "tests", "tests.node")],
+  plugins: buildOptions.plugins.concat([
     {
-      name: "watch",
+      name: "runTests",
       setup(build) {
         build.onEnd((result) => {
           if (result.errors.length > 0) {
@@ -50,14 +57,37 @@ const buildOptions = {
         });
       },
     },
-  ],
+  ]),
 };
 
-if (watch) {
-  (async () => {
-    const ctx = await esbuild.context(buildOptions);
-    ctx.watch();
-  })();
+const benchmarkBuildOptions = {
+  ...buildOptions,
+  entryPoints: [path.join(__dirname, "src", "benchmarks", "benchmarks.node")],
+  plugins: buildOptions.plugins.concat([
+    {
+      name: "runBenchmarks",
+      setup(build) {
+        build.onEnd((result) => {
+          if (result.errors.length > 0) {
+            return;
+          }
+          delete require.cache[path.join(__dirname, "build", "benchmarks.js")];
+          require("./build/benchmarks.js");
+        });
+      },
+    },
+  ]),
+};
+
+if (benchmarks) {
+  esbuild.build(benchmarkBuildOptions);
 } else {
-  esbuild.build(buildOptions);
+  if (watch) {
+    (async () => {
+      const ctx = await esbuild.context(testBuildOptions);
+      ctx.watch();
+    })();
+  } else {
+    esbuild.build(testBuildOptions);
+  }
 }

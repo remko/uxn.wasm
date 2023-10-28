@@ -136,7 +136,7 @@ if (watch) {
       }
     }).listen(8080);
 
-    console.log("listening on port 8080");
+    console.log("listening on http://localhost:8080");
 
     const webCtx = await esbuild.context(webBuildOptions);
     webCtx.watch();

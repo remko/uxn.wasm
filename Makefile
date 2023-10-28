@@ -23,6 +23,10 @@ test:
 test-dev:
 	./test.js --watch
 
+.PHONY: bench
+bench:
+	./test.js --benchmarks
+
 build/%.wasm: src/%.wat
 	mkdir -p build
 	$(WAT2WASM) $(WAT2WASM_FLAGS) -o $@ $<
