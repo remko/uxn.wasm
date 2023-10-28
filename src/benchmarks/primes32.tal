@@ -1,0 +1,136 @@
+( primes32.tal                                         )
+( source: http://git.phial.org/d6/nxu )
+(                                                      )
+( Uses a simple trial-divion method to find primes.    )
+(                                                      )
+( To determine if x is prime we:                       )
+(                                                      )
+( 1. Check if x is 2 (prime)                           )
+( 2. Check if x is even (not prime)                    )
+( 3. Check if x is 3 (prime)                           )
+( 4. Starting with i=5, we see if x%i is 0             )
+(   a. We alternately increment i by 2 and 4           )
+(   b. We stop when x < i*i or i=0xffff                )
+( 5. If we didn't find an i, x is prime.               )
+(                                                      )
+( The reason we alternate our increment is because we  )
+( know that x%6 must equal 1 or 5. if x%6 was 3 then x )
+( would be divisible by 3.                             )
+(                                                      )
+( This method can be fast for some large composite     )
+( numbers but is slower for large primes.              )
+(                                                      )
+( On my machine, checking 0x7fffffff took 0.5 seconds  )
+( and checking 0xfffffffb took 0.9 seconds. Both are   )
+( prime numbers.                                       )
+(                                                      )
+( Smaller primes also run fairly quickly: 0x17b5d was  )
+( determined to be prime in 0.02 seconds.              )
+
+%SP { #2018 DEO }
+%NL { #0a18 DEO }
+%EXIT { #ff0f DEO BRK }
+%DUP4 { OVR2 OVR2 }
+%POP4 { POP2 POP2 }
+
+|0100
+    ( number to check comes first )
+    #ffff #fffb
+    DUP4 ;is-prime32 JSR2 ( test for primality )
+    STH ;emit/long JSR2 SP STHr ;emit/byte JSR2 NL
+
+    ( Adapted to run multiple times )
+    #ffff #fffb
+    DUP4 ;is-prime32 JSR2 ( test for primality )
+    STH ;emit/long JSR2 SP STHr ;emit/byte JSR2 NL
+
+    #ffff #fffb
+    DUP4 ;is-prime32 JSR2 ( test for primality )
+    STH ;emit/long JSR2 SP STHr ;emit/byte JSR2 NL
+
+    #ffff #fffb
+    DUP4 ;is-prime32 JSR2 ( test for primality )
+    STH ;emit/long JSR2 SP STHr ;emit/byte JSR2 NL
+
+    #ffff #fffb
+    DUP4 ;is-prime32 JSR2 ( test for primality )
+    STH ;emit/long JSR2 SP STHr ;emit/byte JSR2 NL
+
+    #ffff #fffb
+    DUP4 ;is-prime32 JSR2 ( test for primality )
+    STH ;emit/long JSR2 SP STHr ;emit/byte JSR2 NL
+
+    #ffff #fffb
+    DUP4 ;is-prime32 JSR2 ( test for primality )
+    STH ;emit/long JSR2 SP STHr ;emit/byte JSR2 NL
+
+    #ffff #fffb
+    DUP4 ;is-prime32 JSR2 ( test for primality )
+    STH ;emit/long JSR2 SP STHr ;emit/byte JSR2 NL
+
+    #ffff #fffb
+    DUP4 ;is-prime32 JSR2 ( test for primality )
+    STH ;emit/long JSR2 SP STHr ;emit/byte JSR2 NL
+
+    #ffff #fffb
+    DUP4 ;is-prime32 JSR2 ( test for primality )
+    STH ;emit/long JSR2 SP STHr ;emit/byte JSR2 NL
+
+    #ffff #fffb
+    DUP4 ;is-prime32 JSR2 ( test for primality )
+    STH ;emit/long JSR2 SP STHr ;emit/byte JSR2 NL
+
+    #ffff #fffb
+    DUP4 ;is-prime32 JSR2 ( test for primality )
+    STH ;emit/long JSR2 SP STHr ;emit/byte JSR2 NL
+
+    #ffff #fffb
+    DUP4 ;is-prime32 JSR2 ( test for primality )
+    STH ;emit/long JSR2 SP STHr ;emit/byte JSR2 NL
+
+    #ffff #fffb
+    DUP4 ;is-prime32 JSR2 ( test for primality )
+    STH ;emit/long JSR2 SP STHr ;emit/byte JSR2 NL
+
+    EXIT
+
+( include 32-bit math library )
+~math32.tal
+
+( return 01 if x is a prime number, else 00 )
+( works for x >= 2 )
+@is-prime32 ( x** -> bool^ )
+    ,&x1 STR2 ,&x0 STR2 ,&x0 LDR2 ,&x1 LDR2 ( store and reload x )
+    DUP4 #0000 LIT2 &two 0002 ;ne32 JSR2 ( x is 2? )
+    ,&not-two JCN POP4 #01 JMP2r ( 2 is prime )
+    &not-two DUP #01 AND ( x x&1 )
+    ,&not-even JCN POP4 #00 JMP2r ( x is even: not prime )
+    &not-even DUP4 #0000 #0003 ;ne32 JSR2 ( x is 3? )
+    ,&not-three JCN POP4 #01 JMP2r ( 3 is prime )
+    &not-three #0000 ,&i0 STR2 #0005 ,&i1 STR2 ( x i<-5 )
+    ,&two LDR2 ,&inc STR2
+    ,&i0 LDR2 ,&i1 LDR2 ( load our candidate, i )
+    ,&loop JMP ( jump over register data to loop label )
+    [ &i0 0000 &i1 0000 &x0 0000 &x1 0000 &inc 0000 &mask 0006 ] ( registers )
+    &loop ( x i )
+    ,&x0 LDR2 ,&x1 LDR2 ,&i0 LDR2 ,&i1 LDR2 ( x i x i )
+    DUP4 ;mul32 JSR2 ;lt32 JSR2 ( x i x<i*i )
+    STH DUP2 #ffff EQU2 STHr ORA ( x i x<i*i||i=0xffff )
+    ,&finished JCN ( x i )
+    ,&x0 LDR2 ,&x1 LDR2 ,&i0 LDR2 ,&i1 LDR2 ( x i x i )
+    ;mod32 JSR2 ;is-zero32 JSR2 ( x i x//i^ )
+    STH #0000 ,&inc LDR2 ;add32 JSR2 ( x i+2 )
+    ,&inc LDR2 ,&mask LDR2 EOR2 ,&inc STR2 ( inc<-inc^6 )
+    ,&i1 STR2 ,&i0 STR2 ,&i0 LDR2 ,&i1 LDR2 ( write i+2 to register )
+    STHr ( x i+2 x//i^ )
+    ,&i-divides-x JCN ( x j )
+    ,&loop JMP ( if x<j*j, loop )
+    &i-divides-x POP4 POP4 #00 JMP2r ( since i divides x, not prime )
+    &finished POP4 POP4 #01 JMP2r ( didn't find divisors, prime )
+
+@emit
+    &long SWP2 ,&short JSR
+    &short SWP ,&byte JSR
+    &byte DUP #04 SFT ,&char JSR
+    &char #0f AND DUP #09 GTH #27 MUL ADD #30 ADD #18 DEO
+    JMP2r

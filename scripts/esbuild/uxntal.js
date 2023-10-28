@@ -23,6 +23,7 @@ function uxntalPlugin() {
       });
       build.onLoad({ filter: /.*/, namespace: "uxntal" }, async (args) => {
         const r = await exec(`uxnasm ${args.path} -`, {
+          cwd: path.dirname(args.path),
           encoding: "buffer",
         });
         return {

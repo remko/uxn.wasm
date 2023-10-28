@@ -16,20 +16,14 @@ startButtonEl.onclick = async () => {
   startButtonEl.disabled = true;
   resultsEl.replaceChildren();
   for (const b of suite) {
-    const trEl = document.createElement("table");
+    const trEl = document.createElement("tr");
     resultsEl.appendChild(trEl);
     const thEl = document.createElement("th");
     thEl.appendChild(document.createTextNode(b.name));
     trEl.appendChild(thEl);
 
     const uxn = new Uxn();
-    await uxn.init({
-      deo: () => {},
-      dei: (port) => {
-        return uxn.dev[port];
-      },
-    });
-
+    await b.init(uxn);
     for (let i = 0; i < 5; i++) {
       const tdEl = document.createElement("td");
       const valueEl = document.createTextNode("⌛️");
@@ -42,6 +36,7 @@ startButtonEl.onclick = async () => {
         b.run(uxn);
         const t2 = performance.now();
         value = ((t2 - t1) / 1000.0).toFixed(2) + "s";
+        b.check(uxn);
       } catch (e) {
         console.error(e);
         value = "error: " + e;

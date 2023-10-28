@@ -1,0 +1,426 @@
+( math32.tal                                                      )
+( source: http://git.phial.org/d6/nxu )
+(                                                                 )
+( This library supports arithmetic on 32-bit unsigned integers,   )
+( also known as long values.                                      )
+(                                                                 )
+( 32-bit long values are represented by two 16-bit short values:  )
+(                                                                 )
+(      decimal  hexadecimal  uxn literals                         )
+(            0   0x00000000   #0000 #0000                         )
+(            1   0x00000001   #0000 #0001                         )
+(         4660   0x00001234   #0000 #1234                         )
+(        65535   0x0000ffff   #0000 #ffff                         )
+(        65536   0x00010000   #0001 #0000                         )
+(     16777215   0x00ffffff   #00ff #ffff                         )
+(   4294967295   0xffffffff   #ffff #ffff                         )
+(                                                                 )
+( The most significant 16-bit, the "high bits", are stored first. )
+( We document long values as x** -- equivalent to xhi* xlo*.      )
+(                                                                 )
+( Operations supported:                                           )
+(                                                                 )
+(   NAME            STACK EFFECT        DEFINITION                )
+(   add32           x** y** -> z**      x + y                     )
+(   sub32           x** y** -> z**      x - y                     )
+(   mul16           x*  y*  -> z**      x * y                     )
+(   mul32           x** y** -> z**      x * y                     )
+(   div32           x** y** -> q**      x / y                     )
+(   mod32           x** y** -> r**      x % y                     )
+(   divmod32        x** y** -> q** r**  x / y, x % y              )
+(   gcd32           x** y** -> z**      gcd(x, y)                 )
+(   negate32        x**     -> z**      -x                        )
+(   lshift32        x** n^  -> z**      x<<n                      )
+(   rshift32        x** n^  -> z**      x>>n                      )
+(   and32           x** y** -> z**      x & y                     )
+(   or32            x** y** -> z**      x | y                     )
+(   xor32           x** y** -> z**      x ^ y                     )
+(   complement32    x**     -> z**      ~x                        )
+(   eq32            x** y** -> bool^    x == y                    )
+(   ne32            x** y** -> bool^    x != y                    )
+(   is-zero32       x**     -> bool^    x == 0                    )
+(   non-zero32      x**     -> bool^    x != 0                    )
+(   lt32            x** y** -> bool^    x < y                     )
+(   gt32            x** y** -> bool^    x > y                     )
+(   lteq32          x** y** -> bool^    x <= y                    )
+(   gteq32          x** y** -> bool^    x >= y                    )
+(   bitcount8       x^      -> bool^    floor(log2(x))+1          )
+(   bitcount16      x*      -> bool^    floor(log2(x))+1          )
+(   bitcount32      x**     -> bool^    floor(log2(x))+1          )
+(                                                                 )
+( In addition to the code this file uses 44 bytes of registers    )
+( to store temporary state:                                       )
+(                                                                 )
+(   - shared memory, 16 bytes                                     )
+(   - mul32 memory, 12 bytes                                      )
+(   - _divmod32 memory, 16 bytes                                  )
+
+( bitcount: number of bits needed to represent number )
+( equivalent to floor[log2[x]] + 1 )
+
+@bitcount8 ( x^ -> n^ )
+    #00 SWP ( n x )
+    &loop
+    DUP #00 EQU ( n x x=0 )
+    ,&done JCN ( n x )
+    #01 SFT ( n x>>1 )
+    SWP INC SWP ( n+1 x>>1 )
+    ,&loop JMP
+    &done
+    POP ( n )
+    JMP2r
+
+@bitcount16 ( x* -> n^ )
+    SWP ( xlo xhi )
+    ;bitcount8 JSR2 ( xlo nhi )
+    DUP #00 NEQ ( xlo nhi nhi!=0 )
+    ,&hi-set JCN ( xlo nhi )
+    SWP ;bitcount8 JSR2 ADD ( nhi+nlo )
+    JMP2r
+    &hi-set
+    NIP #08 ADD ( nhi+8 )
+    JMP2r
+
+@bitcount32 ( x** -> n^ )
+    SWP2 ( xlo* xhi* )
+    ;bitcount16 JSR2 ( xlo* nhi )
+    DUP #00 NEQ ( xlo* nhi nhi!=0 )
+    ,&hi-set JCN ( xlo* nhi )
+    ROT ROT ;bitcount16 JSR2 ADD JMP2r ( nhi+nlo )
+    &hi-set
+    ROT ROT POP2 #10 ADD ( nhi+16 )
+    JMP2r
+
+( equality )
+
+( x == y )
+@eq32 ( xhi* xlo* yhi* ylo* -> bool^ )
+    ROT2 EQU2 STH
+    EQU2 STHr AND JMP2r
+
+( x != y )
+@ne32 ( xhi* xlo* yhi* ylo* -> bool^ )
+    ROT2 NEQ2 STH
+    NEQ2 STHr ORA JMP2r
+
+( x == 0 )
+@is-zero32 ( x** -> bool^ )
+    ORA2 #0000 EQU2 JMP2r
+
+( x != 0 )
+@non-zero32 ( x** -> bool^ )
+    ORA2 ORA JMP2r
+
+( comparisons )
+
+( x < y )
+@lt32 ( x** y** -> bool^ )
+    ROT2 SWP2 ( xhi yhi xlo ylo )
+    LTH2 ,&lt-lo JCN ( xhi yhi )
+    LTH2 JMP2r
+    &lt-lo
+    GTH2 #00 EQU JMP2r
+
+( x <= y )
+@lteq32 ( x** y** -> bool^ )
+    ROT2 SWP2 ( xhi yhi xlo ylo )
+    GTH2 ,&gt-lo JCN ( xhi yhi )
+    GTH2 #00 EQU JMP2r
+    &gt-lo
+    LTH2 JMP2r
+
+( x > y )
+@gt32 ( x** y** -> bool^ )
+    ROT2 SWP2 ( xhi yhi xlo ylo )
+    GTH2 ,&gt-lo JCN ( xhi yhi )
+    GTH2 JMP2r
+    &gt-lo
+    LTH2 #00 EQU JMP2r
+
+( x > y )
+@gteq32 ( x** y** -> bool^ )
+    ROT2 SWP2 ( xhi yhi xlo ylo )
+    LTH2 ,&lt-lo JCN ( xhi yhi )
+    LTH2 #00 EQU JMP2r
+    &lt-lo
+    GTH2 JMP2r
+
+( bitwise operations )
+
+( x & y )
+@and32 ( xhi* xlo* yhi* ylo* -> xhi|yhi* xlo|ylo* )
+    ROT2 AND2 STH2 AND2 STH2r JMP2r
+
+( x | y )
+@or32 ( xhi* xlo* yhi* ylo* -> xhi|yhi* xlo|ylo* )
+    ROT2 ORA2 STH2 ORA2 STH2r JMP2r
+
+( x ^ y )
+@xor32 ( xhi* xlo* yhi* ylo* -> xhi|yhi* xlo|ylo* )
+    ROT2 EOR2 STH2 EOR2 STH2r JMP2r
+
+( ~x )
+@complement32 ( x** -> ~x** )
+    SWP2 #ffff EOR2 SWP2 #ffff EOR2 JMP2r
+
+( temporary registers )
+( shared by most operations, except mul32 and div32 )
+@m32 [ &x0 $1 &x1 $1 &x2 $1 &x3 $1
+       &y0 $1 &y1 $1 &y2 $1 &y3 $1
+       &z0 $1 &z1 $1 &z2 $1 &z3 $1
+       &w0 $1 &w1 $1 &w2 $2 ]
+
+( bit shifting )
+
+( x >> n )
+@rshift32 ( x** n^ -> x<<n )
+    DUP #08 LTH ;rshift32-0 JCN2 ( x n )
+    DUP #10 LTH ;rshift32-1 JCN2 ( x n )
+    DUP #18 LTH ;rshift32-2 JCN2 ( x n )
+    ;rshift32-3 JMP2 ( x n )
+
+( shift right by 0-7 bits )
+@rshift32-0 ( x** n^ -> x<<n )
+        STHk  SFT                      ;m32/z3 STA   ( write z3 )
+    #00 STHkr SFT2 #00 ;m32/z3 LDA ORA2 ;m32/z2 STA2 ( write z2,z3 )
+    #00 STHkr SFT2 #00 ;m32/z2 LDA ORA2 ;m32/z1 STA2 ( write z1,z2 )
+    #00 STHr  SFT2 #00 ;m32/z1 LDA ORA2              ( compute z0,z1 )
+    ;m32/z2 LDA2
+    JMP2r
+
+( shift right by 8-15 bits )
+@rshift32-1 ( x** n^ -> x<<n )
+    #08 SUB STH POP
+        STHkr SFT                      ;m32/z3 STA   ( write z3 )
+    #00 STHkr SFT2 #00 ;m32/z3 LDA ORA2 ;m32/z2 STA2 ( write z2,z3 )
+    #00 STHr  SFT2 #00 ;m32/z2 LDA ORA2              ( compute z1,z2 )
+    #00 ROT ROT ;m32/z3 LDA
+    JMP2r
+
+( shift right by 16-23 bits )
+@rshift32-2 ( x** n^ -> x<<n )
+    #10 SUB STH POP2
+        STHkr SFT                      ;m32/z3 STA ( write z3 )
+    #00 STHr  SFT2 #00 ;m32/z3 LDA ORA2            ( compute z2,z3 )
+    #0000 SWP2
+    JMP2r
+
+( shift right by 16-23 bits )
+@rshift32-3 ( x** n^ -> x<<n )
+    #18 SUB STH POP2 POP ( x0 )
+    #00 SWP #0000 SWP2 ( 00 00 00 x0 )
+    STHr SFT
+    JMP2r
+
+( x << n )
+@lshift32 ( x** n^ -> x<<n )
+    DUP #08 LTH ;lshift32-0 JCN2 ( x n )
+    DUP #10 LTH ;lshift32-1 JCN2 ( x n )
+    DUP #18 LTH ;lshift32-2 JCN2 ( x n )
+    ;lshift32-3 JMP2 ( x n )
+
+( shift left by 0-7 bits )
+@lshift32-0 ( x** n^ -> x<<n )
+    #40 SFT STH ( stash n<<4 )
+    #00 SWP STHkr SFT2                     ;m32/z2 STA2 ( store z2,z3 )
+    #00 SWP STHkr SFT2 #00 ;m32/z2 LDA ORA2 ;m32/z1 STA2 ( store z1,z2 )
+    #00 SWP STHkr SFT2 #00 ;m32/z1 LDA ORA2 ;m32/z0 STA2 ( store z0,z1 )
+            STHr  SFT      ;m32/z0 LDA ORA              ( calculate z0 )
+    ;m32/z1 LDA ;m32/z2 LDA2
+    JMP2r
+
+( shift left by 8-15 bits )
+@lshift32-1 ( x** n^ -> x<<n )
+    #08 SUB #40 SFT STH ( stash [n-8]<<4 )
+    #00 SWP STHkr SFT2                     ;m32/z1 STA2 ( store z1,z2 )
+    #00 SWP STHkr SFT2 #00 ;m32/z1 LDA ORA2 ;m32/z0 STA2 ( store z0,z1 )
+            STHr  SFT      ;m32/z0 LDA ORA              ( calculate z0 )
+    NIP ( x0 unused )
+    ;m32/z1 LDA2 #00
+    JMP2r
+
+( shift left by 16-23 bits )
+@lshift32-2 ( x** n^ -> x<<n )
+    #10 SUB #40 SFT STH ( stash [n-16]<<4 )
+    #00 SWP STHkr SFT2                ;m32/z0 STA2 ( store z0,z1 )
+            STHr  SFT  ;m32/z0 LDA ORA             ( calculate z0 )
+    STH POP2 STHr
+    ;m32/z1 LDA #0000
+    JMP2r
+
+( shift left by 24-31 bits )
+@lshift32-3 ( x** n^ -> x<<n )
+    #18 SUB #40 SFT ( x0 x1 x2 x3 r=[n-24]<<4 )
+    SFT ( x0 x1 x2 x3<<r )
+    NIP2 NIP #0000 #00
+    JMP2r
+
+( arithmetic )
+
+( x + y )
+@add32 ( xhi* xlo* yhi* ylo* -> zhi* zlo* )
+    ;m32/y2 STA2 ;m32/y0 STA2 ( save ylo, yhi )
+    ;m32/x2 STA2 ;m32/x0 STA2 ( save xlo, xhi )
+    #0000 DUP2 ;m32/z0 STA2 ;m32/z2 STA2 ( reset zhi, zlo )
+
+    ( x3 + y3 => z2z3 )
+    #00 ;m32/x3 LDA #00 ;m32/y3 LDA ADD2 ;m32/z2 STA2
+
+    ( x2 + y2 + z2 => z1z2 )
+    #00 ;m32/x2 LDA ;m32/z1 LDA2 ADD2 ;m32/z1 STA2
+    #00 ;m32/y2 LDA ;m32/z1 LDA2 ADD2 ;m32/z1 STA2
+
+    ( x1 + y1 + z1 => z0z1 )
+    #00 ;m32/x1 LDA ;m32/z0 LDA2 ADD2 ;m32/z0 STA2
+    #00 ;m32/y1 LDA ;m32/z0 LDA2 ADD2 ;m32/z0 STA2
+
+    ( x0 + y0 + z0 => z0 )
+    ;m32/x0 LDA ;m32/z0 LDA ADD ;m32/z0 STA
+    ;m32/y0 LDA ;m32/z0 LDA ADD ;m32/z0 STA
+
+    ( load zhi,zlo )
+    ;m32/z0 LDA2 ;m32/z2 LDA2
+    JMP2r
+
+( -x )
+@negate32 ( x** -> -x** )
+    ;complement32 JSR2 ( ~x** )
+    INC2 ( ~xhi -xlo )
+    ORAk ( ~xhi -xlo non-zero? )
+    ,&done JCN ( xlo non-zero => don't inc hi )
+    SWP2 INC2 SWP2 ( -xhi -xlo )
+    &done
+    JMP2r
+
+( x - y )
+@sub32 ( x** y** -> z** )
+    ;negate32 JSR2 ;add32 JMP2
+
+( 16-bit multiplication )
+@mul16 ( x* y* -> z** )
+    ;m32/y1 STA ;m32/y0 STA ( save ylo, yhi )
+    ;m32/x1 STA ;m32/x0 STA ( save xlo, xhi )
+    #0000 #00 ;m32/z1 STA2 ;m32/z3 STA ( reset z1,z2,z3 )
+    #0000 #00 ;m32/w0 STA2 ;m32/w2 STA ( reset w0,w1,w2 )
+
+    ( x1 * y1 => z1z2 )
+    #00 ;m32/x1 LDA #00 ;m32/y1 LDA MUL2 ;m32/z2 STA2
+
+    ( x0 * y1 => z0z1 )
+    #00 ;m32/x0 LDA #00 ;m32/y1 LDA MUL2 ;m32/z1 LDA2 ADD2 ;m32/z1 STA2
+
+    ( x1 * y0 => w1w2 )
+    #00 ;m32/x1 LDA #00 ;m32/y0 LDA MUL2 ;m32/w1 STA2
+
+    ( x0 * y0 => w0w1 )
+    #00 ;m32/x0 LDA #00 ;m32/y0 LDA MUL2 ;m32/w0 LDA2 ADD2 ;m32/w0 STA2
+
+    ( add z and a<<8 )
+    #00 ;m32/z1 LDA2 ;m32/z3 LDA
+    ;m32/w0 LDA2 ;m32/w2 LDA #00
+    ;add32 JMP2
+
+( x * y )
+@mul32 ( x** y** -> z** )
+    ,&y1 STR2 ,&y0 STR2 ( save ylo, yhi )
+    ,&x1 STR2 ,&x0 STR2 ( save xlo, xhi )
+    ,&y1 LDR2 ,&x1 LDR2 ;mul16 JSR2 ( [x1*y1] )
+    ,&z1 STR2 ,&z0 STR2 ( sum = x1*y1, save zlo, zhi )
+    ,&y1 LDR2 ,&x0 LDR2 MUL2 ( [x0*y1]<<16 )
+    ,&y0 LDR2 ,&x1 LDR2 MUL2 ( [x1*y0]<<16 )
+    ( [x0*y0]<<32 will completely overflow )
+    ADD2 ,&z0 LDR2 ADD2 ( sum += x0*y1<<16 + x1*y0<<16 )
+    ,&z1 LDR2
+    JMP2r
+[ &x0 $2 &x1 $2
+  &y0 $2 &y1 $2
+  &z0 $2 &z1 $2 ]
+
+@div32 ( x** y** -> q** )
+    ;_divmod32 JSR2
+    ;_divmod32/quo0 LDA2 ;_divmod32/quo1 LDA2
+    JMP2r
+
+@mod32 ( x** y** -> r** )
+    ;_divmod32 JSR2
+    ;_divmod32/rem0 LDA2 ;_divmod32/rem1 LDA2
+    JMP2r
+
+@divmod32 ( x** y** -> q** r** )
+    ;_divmod32 JSR2
+    ;_divmod32/quo0 LDA2 ;_divmod32/quo1 LDA2
+    ;_divmod32/rem0 LDA2 ;_divmod32/rem1 LDA2
+    JMP2r
+
+( calculate and store x / y and x % y )
+@_divmod32 ( x** y** -> )
+    ( store y and x for repeated use )
+    ,&div1 STR2 ,&div0 STR2 ( y -> div )
+    ,&rem1 STR2 ,&rem0 STR2 ( x -> rem )
+
+    ( if x < y then the answer is 0 )
+    ,&rem0 LDR2 ,&rem1 LDR2
+    ,&div0 LDR2 ,&div1 LDR2
+    ;lt32 JSR2 ,&is-zero JCN ,&not-zero JMP
+    &is-zero
+    #0000 ,&quo0 STR2 #0000 ,&quo1 STR2 JMP2r
+
+    ( x >= y so the answer is >= 1 )
+    &not-zero
+    #0000 ,&quo0 STR2 #0000 ,&quo1 STR2 ( 0 -> quo )
+
+    ( bitcount[x] - bitcount[y] determines the largest multiple of y to try )
+    ,&rem0 LDR2 ,&rem1 LDR2 ;bitcount32 JSR2 ( rbits^ )
+    ,&div0 LDR2 ,&div1 LDR2 ;bitcount32 JSR2 ( rbits^ dbits^ )
+    SUB ( shift=rbits-dits )
+    #00 DUP2 ( shift 0 shift 0 )
+
+    ( 1<<shift -> cur )
+    #0000 INC2k ROT2 POP
+    ;lshift32 JSR2 ,&cur1 STR2 ,&cur0 STR2
+
+    ( div<<shift -> div )
+    ,&div0 LDR2 ,&div1 LDR2 ROT2 POP
+    ;lshift32 JSR2 ,&div1 STR2 ,&div0 STR2
+
+    ,&loop JMP
+
+    [ &div0 $2 &div1 $2
+      &rem0 $2 &rem1 $2
+      &quo0 $2 &quo1 $2
+      &cur0 $2 &cur1 $2 ]
+
+    &loop
+    ( if rem >= the current divisor, we can subtract it and add to quotient )
+    ,&rem0 LDR2 ,&rem1 LDR2 ,&div0 LDR2 ,&div1 LDR2 ;lt32 JSR2 ( is rem < div? )
+    ,&rem-lt JCN ( if rem < div skip this iteration )
+
+    ( since rem >= div, we have found a multiple of y that divides x )
+    ,&rem0 LDR2 ,&rem1 LDR2 ,&div0 LDR2 ,&div1 LDR2 ;sub32 JSR2 ,&rem1 STR2 ,&rem0 STR2 ( rem -= div )
+    ,&quo0 LDR2 ,&quo1 LDR2 ,&cur0 LDR2 ,&cur1 LDR2 ;add32 JSR2 ,&quo1 STR2 ,&quo0 STR2 ( quo += cur )
+
+    &rem-lt
+    ,&div0 LDR2 ,&div1 LDR2 #01 ;rshift32 JSR2 ,&div1 STR2 ,&div0 STR2 ( div >>= 1 )
+    ,&cur0 LDR2 ,&cur1 LDR2 #01 ;rshift32 JSR2 ,&cur1 STR2 ,&cur0 STR2 ( cur >>= 1 )
+    ,&cur0 LDR2 ,&cur1 LDR2 ;non-zero32 JSR2 ,&loop JCN ( if cur>0, loop. else we're done )
+    JMP2r
+
+( greatest common divisor - euclidean algorithm )
+@gcd32 ( x** y** -> z** )
+    &loop ( x y )
+    OVR2 OVR2 ( x y y )
+    ;is-zero32 JSR2 ( x y y=0? )
+    ,&done JCN ( x y )
+    OVR2 OVR2 ( x y y )
+    STH2 STH2 ( x y [y] )
+    ;mod32 JSR2 ( r=x%y [y] )
+    STH2r ( rhi rlo yhi [ylo] )
+    ROT2 ( rlo yhi rhi [ylo] )
+    ROT2 ( yhi rhi rlo [ylo] )
+    STH2r ( yhi rhi rlo ylo )
+    ROT2 ( yhi rlo ylo rhi )
+    ROT2 ( yhi ylo rhi rlo )
+    ,&loop JMP
+    &done
+    POP2 POP2 ( x )
+    JMP2r
