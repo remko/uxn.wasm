@@ -5,10 +5,18 @@ function Uxn() {
 
   this.init = async (system) => {
     const instance = await WebAssembly.instantiate(wasmModule, { system });
-    this.core = instance.instance;
-    this.ram = new Uint8Array(this.core.exports.memory.buffer, 0, 0x10300);
-    this.wstd = new Uint8Array(this.core.exports.memory.buffer, 0x10000, 0xff);
-    this.rstd = new Uint8Array(this.core.exports.memory.buffer, 0x10100, 0xff);
+    this._core = instance.instance;
+    this.ram = new Uint8Array(this._core.exports.memory.buffer, 0, 0x10300);
+    this._wstd = new Uint8Array(
+      this._core.exports.memory.buffer,
+      0x10000,
+      0xff
+    );
+    this._rstd = new Uint8Array(
+      this._core.exports.memory.buffer,
+      0x10100,
+      0xff
+    );
     return this;
   };
 
@@ -20,7 +28,7 @@ function Uxn() {
   };
 
   this.eval = (addr) => {
-    this.core.exports.eval(addr);
+    this._core.exports.eval(addr);
   };
 
   this.poke8 = (addr, val) => {
@@ -42,19 +50,19 @@ function Uxn() {
 
   this.wst = {
     get: (i) => {
-      return this.wstd[0xfe - i];
+      return this._wstd[0xfe - i];
     },
     ptr: () => {
-      return 0x100ff - this.core.exports.wstp();
+      return 0x100ff - this._core.exports.wstp();
     },
   };
 
   this.rst = {
     get: (i) => {
-      return this.rstd[0xfe - i];
+      return this._rstd[0xfe - i];
     },
     ptr: () => {
-      return 0x101ff - this.core.exports.rstp();
+      return 0x101ff - this._core.exports.rstp();
     },
   };
 
