@@ -21,6 +21,7 @@ function Uxn() {
   };
 
   this.load = (rom) => {
+    this.reset();
     for (let i = 0, len = rom.length; i < len; ++i) {
       this.ram[0x100 + i] = rom[i];
     }
@@ -46,6 +47,10 @@ function Uxn() {
 
   this.peek16 = (addr) => {
     return (this.ram[addr] << 8) + this.ram[addr + 1];
+  };
+
+  this.reset = () => {
+    this._core.exports.reset();
   };
 
   this.wst = {

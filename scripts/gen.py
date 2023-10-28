@@ -762,8 +762,6 @@ out = """(module $uxn
   (import "system" "deo" (func $deo (param i32) (param i32)))
   (import "system" "dei" (func $dei (param i32) (result i32)))
 
-  (memory (export "memory") 2)
-
   (func (export "eval") (param $pc i32)
     (local $ins i32)
     (local $t i32)
@@ -880,11 +878,20 @@ out += """        )));; end
       (i32.shl (i32.and (local.get $v) (i32.const 0xff)) (i32.const 8))
       (i32.shr_u (i32.and (local.get $v) (i32.const 0xff00)) (i32.const 8))))
 
-  (global $wstp (mut i32) (i32.const 0x100ff))
-  (global $rstp (mut i32) (i32.const 0x101ff))
+  (func $reset (export "reset")
+    (global.set $wstp (i32.const 0x100ff))
+    (global.set $rstp (i32.const 0x101ff))
+    (memory.fill (i32.const 0x0) (i32.const 0x0) (i32.const 0x10300)))
 
   (func (export "wstp") (result i32) (global.get $wstp))
   (func (export "rstp") (result i32) (global.get $rstp))
+
+  (memory (export "memory") 2)
+
+  (global $wstp (mut i32) (i32.const -1))
+  (global $rstp (mut i32) (i32.const -1))
+
+  (start $reset)
 )
 """
 print(out)

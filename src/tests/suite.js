@@ -448,8 +448,31 @@ function loadTests() {
           expect(failed).to.eql(0, msg);
         });
       });
+    });
 
-      ////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////
+
+    describe("Uxn", () => {
+      describe("init", () => {
+        it("should initialize the state", () => {
+          expect(wst()).to.eql([]);
+          expect(rst()).to.eql([]);
+        });
+      });
+
+      describe("load", () => {
+        it("should reset the state", () => {
+          uxn.load([LIT, 2, LIT, 1, STZ]);
+          uxn.eval(PROGRAM_OFFSET);
+          expect(uxn.ram[1]).to.eql(2);
+
+          uxn.load([LIT, 20]);
+
+          expect(wst()).to.eql([]);
+          expect(rst()).to.eql([]);
+          expect(uxn.ram[1]).to.eql(0);
+        });
+      });
 
       describe("eval", () => {
         it("should return on system error code", () => {
