@@ -41,7 +41,10 @@ const INDEX_TEMPLATE = `<!doctype html>
 `;
 
 async function handleBuildFinished(result) {
-  const indexes = [["UXN.WASM Tests", "tests", "public/uxn-wasm/tests"]];
+  const indexes = [
+    ["Uxn.wasm Tests", "tests", "public/uxn-wasm/tests"],
+    ["Uxn.wasm Benchmarks", "benchmarks", "public/uxn-wasm/benchmarks"],
+  ];
   for (const [title, base, outpath] of indexes) {
     let index = INDEX_TEMPLATE.replace(/\$BASE/g, base).replace(
       /\$TITLE/g,
@@ -85,7 +88,10 @@ const packageBuildOptions = {
 
 let webBuildOptions = {
   ...buildOptions,
-  entryPoints: [path.join(__dirname, "src", "tests", "tests")],
+  entryPoints: [
+    path.join(__dirname, "src", "tests", "tests"),
+    path.join(__dirname, "src", "benchmarks", "benchmarks"),
+  ],
   entryNames: dev ? "[name]" : "[name]-c$[hash]",
   assetNames: "[name]-c$[hash]",
   outdir: path.join(__dirname, "public/uxn-wasm/dist"),
