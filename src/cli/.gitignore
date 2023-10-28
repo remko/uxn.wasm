@@ -1,0 +1,8 @@
+*.o
+*.rom
+*.sym
+*.profraw
+*.profdata
+/coverage
+/uxnwasm
+uxnwasm_core.*

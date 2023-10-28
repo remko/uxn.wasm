@@ -108,7 +108,7 @@ JMP2r
 	=op-mul/e =op-mul/f =op-mul/g =op-mul/h ]
 =op-div [
 	=op-div/a =op-div/b =op-div/c =op-div/d =op-div/e
-	=op-div/f =op-div/g =op-div/h =op-div/h =op-div/i ]
+	=op-div/f =op-div/g =op-div/h =op-div/i =op-div/j ]
 =op-inc [
 	=op-inc/a =op-inc/b =op-inc/c =op-inc/d
 	=op-inc/e =op-inc/f =op-inc/g =op-inc/h ]
