@@ -316,6 +316,12 @@ function loadTests() {
           uxn.eval(PROGRAM_OFFSET);
           expect(wst()).to.eql([0x12, 0x13]);
         });
+
+        it("should wrap stack around", () => {
+          uxn.load(Array.from({ length: 257 }, () => [LIT, 0x24]).flat());
+          uxn.eval(PROGRAM_OFFSET);
+          expect(wst()).to.eql([0x24]);
+        });
       });
 
       describe("EQU", () => {
@@ -357,6 +363,29 @@ function loadTests() {
           uxn.load([LIT, 0x12, LIT, 0x13, ADD]);
           uxn.eval(PROGRAM_OFFSET);
           expect(wst()).to.eql([0x25]);
+        });
+      });
+
+      describe("ADD", () => {
+        it("should work with wrapped stacks", () => {
+          uxn.load([POP, LIT, 0x12, LIT, 0x13, ADD, DUP]);
+          uxn.eval(PROGRAM_OFFSET);
+          expect(wst()).to.eql([0x25]);
+        });
+      });
+
+      describe("POP", () => {
+        it("should wrap stack around", () => {
+          uxn.load(
+            Array.from({ length: 255 }, () => [LITr, 0x24])
+              .flat()
+              .concat([POP, POP, LIT, 0x12, LIT, 0x12])
+          );
+          uxn.ram[0xffff] = 0x23;
+          uxn.eval(PROGRAM_OFFSET);
+          expect(wst()).to.eql([]);
+          expect(uxn.ram[0xffff]).to.eql(0x23);
+          expect(rst()).to.eql(Array.from({ length: 255 }, () => 0x24));
         });
       });
 

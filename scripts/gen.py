@@ -732,7 +732,10 @@ def replace_set(m, is_rst, is_keep, flip):
     stack = "rst" if (mode_rst ^ flip) else "wst"
     delta = int(m.group(1)) + int(m.group(2)) if is_keep else int(m.group(2))
     if delta != 0:
-        return "(global.set $%sp (i32.sub (global.get $%sp) (i32.const %d)))" % (
+        delta = -delta
+        if delta < 0:
+            delta = 256 + delta
+        return "(global.set $%sp (i32.and (i32.add (global.get $%sp) (i32.const %d)) (i32.const 0xff)))" % (
             stack, stack, delta)
     else:
         return ""
@@ -791,49 +794,49 @@ for ins, inss in enumerate(instructions):
     ncode = ""
     for c in code.split("\n"):
         c = re.sub(r"\(#T2! (.*)\)\s*$",
-                   r"(i32.store8 offset=%s (i32.add (global.get $%sp) (i32.const 1)) (i32.shr_u (local.tee $val \1) (i32.const 8))) (i32.store8 offset=%s (global.get $%sp) (i32.and (local.get $val) (i32.const 0xff)))" % (offset, stack,offset, stack), c)
-        c = c.replace("(#T2)", "(i32.or (i32.shl (i32.load8_u offset=%s (i32.add (global.get $%sp) (i32.const 0x1))) (i32.const 8)) (i32.load8_u offset=%s (global.get $%sp)))" % (offset,stack,offset, stack))
+                   r"(i32.store8 offset=%s (i32.and (i32.add (global.get $%sp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.tee $val \1) (i32.const 8))) (i32.store8 offset=%s (global.get $%sp) (i32.and (local.get $val) (i32.const 0xff)))" % (offset, stack,offset, stack), c)
+        c = c.replace("(#T2)", "(i32.or (i32.shl (i32.load8_u offset=%s (i32.and (i32.add (global.get $%sp) (i32.const 0x1)) (i32.const 0xff))) (i32.const 8)) (i32.load8_u offset=%s (global.get $%sp)))" % (offset,stack,offset, stack))
         c = re.sub(r"\(#T! (.*)\)\s*$",
                    r"(i32.store8 offset=%s (global.get $%sp) \1)" % ( offset, stack), c)
         c = c.replace("(#T)", "(i32.load8_u offset=%s (global.get $%sp))" % (offset, stack))
         c = re.sub(r"\(#~T2! (.*)\)\s*$",
-                   r"(i32.store8 offset=%s (i32.add (global.get $%sp) (i32.const 0x1)) (i32.shr_u (local.tee $val \1) (i32.const 8))) (i32.store8 offset=%s (global.get $%sp) (i32.and (local.get $val) (i32.const 0xff)))" % (flipoffset, flipstack, flipoffset, flipstack), c)
+                   r"(i32.store8 offset=%s (i32.and (i32.add (global.get $%sp) (i32.const 0x1)) (i32.const 0xff)) (i32.shr_u (local.tee $val \1) (i32.const 8))) (i32.store8 offset=%s (global.get $%sp) (i32.and (local.get $val) (i32.const 0xff)))" % (flipoffset, flipstack, flipoffset, flipstack), c)
         c = re.sub(r"\(#~T! (.*)\)\s*$",
                    r"(i32.store8 offset=%s (global.get $%sp) \1)" % (flipoffset, flipstack), c)
 
         c = re.sub(
             r"\(#N2! (.*)\)\s*$",
-            r"(i32.store8 offset=%s (i32.add (global.get $%sp) (i32.const 3)) (i32.shr_u (local.tee $val \1) (i32.const 8))) (i32.store8 offset=%s (i32.add (global.get $%sp) (i32.const 2)) (i32.and (local.get $val) (i32.const 0xff)))" %
+            r"(i32.store8 offset=%s (i32.and (i32.add (global.get $%sp) (i32.const 3)) (i32.const 0xff)) (i32.shr_u (local.tee $val \1) (i32.const 8))) (i32.store8 offset=%s (i32.and (i32.add (global.get $%sp) (i32.const 2)) (i32.const 0xff)) (i32.and (local.get $val) (i32.const 0xff)))" %
             (offset, stack, offset, stack), c)
         c = c.replace(
             "(#N2)",
-            "(i32.or (i32.shl (i32.load8_u offset=%s (i32.add (global.get $%sp) (i32.const 3))) (i32.const 8)) (i32.load8_u offset=%s (i32.add (global.get $%sp) (i32.const 2))))" % (offset, stack, offset, stack))
+            "(i32.or (i32.shl (i32.load8_u offset=%s (i32.and (i32.add (global.get $%sp) (i32.const 3)) (i32.const 0xff))) (i32.const 8)) (i32.load8_u offset=%s (i32.and (i32.add (global.get $%sp) (i32.const 2)) (i32.const 0xff))))" % (offset, stack, offset, stack))
         c = re.sub(
             r"\(#N! (.*)\)\s*$",
-            r"(i32.store8 offset=%s (i32.add (global.get $%sp) (i32.const 1)) \1)" %
+            r"(i32.store8 offset=%s (i32.and (i32.add (global.get $%sp) (i32.const 1)) (i32.const 0xff)) \1)" %
             (offset, stack), c)
         c = c.replace(
             "(#N)",
-            "(i32.load8_u offset=%s (i32.add (global.get $%sp) (i32.const 1)))" % (offset, stack))
+            "(i32.load8_u offset=%s (i32.and (i32.add (global.get $%sp) (i32.const 1)) (i32.const 0xff)))" % (offset, stack))
 
         c = re.sub(
             r"\(#L2! (.*)\)\s*$",
-            r"(i32.store8 offset=%s (i32.add (global.get $%sp) (i32.const 5)) (i32.shr_u (local.tee $val \1) (i32.const 8))) (i32.store8 offset=%s (i32.add (global.get $%sp) (i32.const 4)) (i32.and (local.get $val) (i32.const 0xff)))" %
+            r"(i32.store8 offset=%s (i32.and (i32.add (global.get $%sp) (i32.const 5)) (i32.const 0xff)) (i32.shr_u (local.tee $val \1) (i32.const 8))) (i32.store8 offset=%s (i32.and (i32.add (global.get $%sp) (i32.const 4)) (i32.const 0xff)) (i32.and (local.get $val) (i32.const 0xff)))" %
             (offset, stack, offset, stack), c)
         c = c.replace(
             "(#L2)",
-            "(i32.or (i32.shl (i32.load8_u offset=%s (i32.add (global.get $%sp) (i32.const 5))) (i32.const 8)) (i32.load8_u offset=%s (i32.add (global.get $%sp) (i32.const 4))))" % (offset,stack, offset, stack))
+            "(i32.or (i32.shl (i32.load8_u offset=%s (i32.and (i32.add (global.get $%sp) (i32.const 5)) (i32.const 0xff))) (i32.const 8)) (i32.load8_u offset=%s (i32.and (i32.add (global.get $%sp) (i32.const 4)) (i32.const 0xff))))" % (offset,stack, offset, stack))
         c = re.sub(
             r"\(#L! (.*)\)\s*$",
-            r"(i32.store8 offset=%s (i32.add (global.get $%sp) (i32.const 2)) \1)" %
+            r"(i32.store8 offset=%s (i32.and (i32.add (global.get $%sp) (i32.const 2)) (i32.const 0xff)) \1)" %
             (offset,stack), c)
         c = c.replace(
             "(#L)",
-            "(i32.load8_u offset=%s (i32.add (global.get $%sp) (i32.const 2)))" % (offset,stack))
+            "(i32.load8_u offset=%s (i32.and (i32.add (global.get $%sp) (i32.const 2)) (i32.const 0xff)))" % (offset,stack))
 
         c = c.replace(
             "(#H2)",
-            "(i32.or (i32.shl (i32.load8_u offset=%s (i32.add (global.get $%sp) (i32.const 2))) (i32.const 8)) (i32.load8_u offset=%s (i32.add (global.get $%sp) (i32.const 1))))" % (offset,stack, offset, stack))
+            "(i32.or (i32.shl (i32.load8_u offset=%s (i32.and (i32.add (global.get $%sp) (i32.const 2)) (i32.const 0xff))) (i32.const 8)) (i32.load8_u offset=%s (i32.and (i32.add (global.get $%sp) (i32.const 1)) (i32.const 0xff))))" % (offset,stack, offset, stack))
 
         c = re.sub(r"\(#set (\-?\d+) (-?\d+)\)",
                    lambda m: replace_set(m, mode_rst, mode_keep, False), c)
