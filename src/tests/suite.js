@@ -392,6 +392,22 @@ function loadTests() {
         });
       });
 
+      describe("ADD2", () => {
+        it("should work", () => {
+          uxn.load([LIT, 0x01, LIT, 0x02, LIT, 0x01, LIT, 0x02, ADD2]);
+          uxn.eval(PROGRAM_OFFSET);
+          expect(wst()).to.eql([0x02, 0x04]);
+        });
+      });
+
+      describe("LDR2", () => {
+        it("should work", () => {
+          uxn.load([LIT, 0x03, LDR2, BRK, 0x13, 0x14, 0x15, 0x16]);
+          uxn.eval(PROGRAM_OFFSET);
+          expect(wst()).to.eql([0x15, 0x16]);
+        });
+      });
+
       ////////////////////////////////////////////////////////////////////////////////
 
       describe("uxn instruction test suite", () => {
