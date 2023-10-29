@@ -96,9 +96,7 @@ instructions = [
         "JMP", """
 (local.set $t (#T))
 (#set 1 -1)
-(local.set $pc (i32.add (local.get $pc) 
-    (#signed (local.get $t))
-))
+(local.set $pc (i32.add (local.get $pc) (call $signed (local.get $t))))
 """
     ],
     [
@@ -106,9 +104,7 @@ instructions = [
 (local.set $t (#T))
 (local.set $n (#N))
 (#set 2 -2)
-(if (local.get $n) (then (local.set $pc (i32.add (local.get $pc) 
-    (#signed (local.get $t))
-))))
+(if (local.get $n) (then (local.set $pc (i32.add (local.get $pc) (call $signed (local.get $t))))))
 """
     ],
     [
@@ -117,9 +113,7 @@ instructions = [
 (#set 1 -1)
 (#~set 0 2)
 (#~T2! (local.get $pc))
-(local.set $pc (i32.add (local.get $pc) 
-    (#signed (local.get $t))
-))
+(local.set $pc (i32.add (local.get $pc) (call $signed (local.get $t))))
 """
     ],
     [
@@ -149,9 +143,7 @@ instructions = [
         "LDR", """
 (local.set $t (#T))
 (#set 1 0)
-(#T! (i32.load8_u (i32.add (local.get $pc) 
-    (#signed (local.get $t))
-)))
+(#T! (i32.load8_u (i32.add (local.get $pc) (call $signed (local.get $t)))))
 """
     ],
     [
@@ -159,9 +151,7 @@ instructions = [
 (local.set $t (#T))
 (local.set $n (#N))
 (#set 2 -2)
-(i32.store8 (i32.add (local.get $pc) 
-    (#signed (local.get $t))
-) (local.get $n))
+(i32.store8 (i32.add (local.get $pc) (call $signed (local.get $t))) (local.get $n))
 """
     ],
     [
@@ -265,9 +255,7 @@ instructions = [
 (#set 0 -1)
 (if (local.get $t) 
     (then 
-        (local.set $pc (i32.add (i32.const 2) (i32.add (local.get $pc) 
-            (#signed2 (call $swap (i32.load16_u (local.get $pc))))
-        ))))
+        (local.set $pc (i32.add (i32.const 2) (i32.add (local.get $pc) (call $signed2 (call $swap (i32.load16_u (local.get $pc))))))))
     (else 
         (local.set $pc (i32.add (local.get $pc) (i32.const 2)))))
 """
@@ -408,9 +396,7 @@ instructions = [
         "LDR2", """
 (local.set $t (#T))
 (#set 1 1)
-(#T2! (call $swap (i32.load16_u (i32.add (local.get $pc) 
-    (#signed (local.get $t))
-))))
+(#T2! (call $swap (i32.load16_u (i32.add (local.get $pc) (call $signed (local.get $t))))))
 """
     ],
     [
@@ -418,9 +404,7 @@ instructions = [
 (local.set $t (#T))
 (local.set $n (#H2))
 (#set 3 -3)
-(i32.store16 (i32.add (local.get $pc) 
-    (#signed (local.get $t))
-) (call $swap (local.get $n)))
+(i32.store16 (i32.add (local.get $pc) (call $signed (local.get $t))) (call $swap (local.get $n)))
 """
     ],
     [
@@ -524,9 +508,7 @@ instructions = [
     ],
     [
         "JMI", """
-(local.set $pc (i32.add (i32.const 2) (i32.add (local.get $pc) 
-    (#signed2 (call $swap (i32.load16_u (local.get $pc))))
-)))
+(local.set $pc (i32.add (i32.const 2) (i32.add (local.get $pc) (call $signed2 (call $swap (i32.load16_u (local.get $pc)))))))
 """
     ],
     ["INCr", None],
@@ -564,9 +546,7 @@ instructions = [
         "JSI", """
 (#set 0 2)
 (#T2! (local.tee $n (i32.add (local.get $pc) (i32.const 2))))
-(local.set $pc (i32.add (local.get $n) 
-    (#signed2 (call $swap (i32.load16_u (local.get $pc))))
-))
+(local.set $pc (i32.add (local.get $n) (call $signed2 (call $swap (i32.load16_u (local.get $pc))))))
 """
     ],
     ["INC2r", None],
@@ -856,12 +836,12 @@ for ins, inss in enumerate(instructions):
         c = re.sub(r"\(#~set (\-?\d+) (-?\d+)\)",
                    lambda m: replace_set(m, mode_rst, mode_keep, True), c)
 
-        c = re.sub(r"\(#signed2 (.*)\)\s*$",
-                   r"(i32.shr_s (i32.shl \1 (i32.const 16)) (i32.const 16))",
-                   c)
-        c = re.sub(r"\(#signed (.*)\)\s*$",
-                   r"(i32.shr_s (i32.shl \1 (i32.const 24)) (i32.const 24))",
-                   c)
+        # c = re.sub(r"\(#signed2 (.*)\)\s*$",
+        #            r"(i32.shr_s (i32.shl \1 (i32.const 16)) (i32.const 16))",
+        #            c)
+        # c = re.sub(r"\(#signed (.*)\)\s*$",
+        #            r"(i32.shr_s (i32.shl \1 (i32.const 24)) (i32.const 24))",
+        #            c)
         ncode += c + "\n"
     code = indent(ncode.rstrip(), 8)
     if len(code) > 0:
@@ -877,6 +857,12 @@ out += """        )));; end
     (i32.or
       (i32.shl (i32.and (local.get $v) (i32.const 0xff)) (i32.const 8))
       (i32.shr_u (i32.and (local.get $v) (i32.const 0xff00)) (i32.const 8))))
+
+  (func $signed (param $v i32) (result i32)
+    (i32.shr_s (i32.shl (local.get $v) (i32.const 24)) (i32.const 24)))
+
+  (func $signed2 (param $v i32) (result i32)
+    (i32.shr_s (i32.shl (local.get $v) (i32.const 16)) (i32.const 16)))
 
   (func $reset (export "reset")
     (global.set $wstp (i32.const 0x100ff))

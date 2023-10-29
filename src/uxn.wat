@@ -134,18 +134,14 @@
         );; JMP
         (local.set $t (i32.load8_u (global.get $wstp)))
         (global.set $wstp (i32.sub (global.get $wstp) (i32.const -1)))
-        (local.set $pc (i32.add (local.get $pc) 
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        ))
+        (local.set $pc (i32.add (local.get $pc) (call $signed (local.get $t))))
         (br $loop)
 
         );; JCN
         (local.set $t (i32.load8_u (global.get $wstp)))
         (local.set $n (i32.load8_u (i32.add (global.get $wstp) (i32.const 1))))
         (global.set $wstp (i32.sub (global.get $wstp) (i32.const -2)))
-        (if (local.get $n) (then (local.set $pc (i32.add (local.get $pc) 
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        ))))
+        (if (local.get $n) (then (local.set $pc (i32.add (local.get $pc) (call $signed (local.get $t))))))
         (br $loop)
 
         );; JSR
@@ -153,9 +149,7 @@
         (global.set $wstp (i32.sub (global.get $wstp) (i32.const -1)))
         (global.set $rstp (i32.sub (global.get $rstp) (i32.const 2)))
         (i32.store16 (global.get $rstp) (local.get $pc))
-        (local.set $pc (i32.add (local.get $pc) 
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        ))
+        (local.set $pc (i32.add (local.get $pc) (call $signed (local.get $t))))
         (br $loop)
 
         );; STH
@@ -179,18 +173,14 @@
 
         );; LDR
         (local.set $t (i32.load8_u (global.get $wstp)))
-        (i32.store8 (global.get $wstp) (i32.load8_u (i32.add (local.get $pc)
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        )))
+        (i32.store8 (global.get $wstp) (i32.load8_u (i32.add (local.get $pc) (call $signed (local.get $t)))))
         (br $loop)
 
         );; STR
         (local.set $t (i32.load8_u (global.get $wstp)))
         (local.set $n (i32.load8_u (i32.add (global.get $wstp) (i32.const 1))))
         (global.set $wstp (i32.sub (global.get $wstp) (i32.const -2)))
-        (i32.store8 (i32.add (local.get $pc) 
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        ) (local.get $n))
+        (i32.store8 (i32.add (local.get $pc) (call $signed (local.get $t))) (local.get $n))
         (br $loop)
 
         );; LDA
@@ -280,9 +270,7 @@
         (global.set $wstp (i32.sub (global.get $wstp) (i32.const -1)))
         (if (local.get $t) 
             (then 
-                (local.set $pc (i32.add (i32.const 2) (i32.add (local.get $pc) 
-                    (i32.shr_s (i32.shl (call $swap (i32.load16_u (local.get $pc))) (i32.const 16)) (i32.const 16))
-                ))))
+                (local.set $pc (i32.add (i32.const 2) (i32.add (local.get $pc) (call $signed2 (call $swap (i32.load16_u (local.get $pc))))))))
             (else 
                 (local.set $pc (i32.add (local.get $pc) (i32.const 2)))))
         (br $loop)
@@ -406,18 +394,14 @@
         );; LDR2
         (local.set $t (i32.load8_u (global.get $wstp)))
         (global.set $wstp (i32.sub (global.get $wstp) (i32.const 1)))
-        (i32.store16 (global.get $wstp) (call $swap (i32.load16_u (i32.add (local.get $pc)
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        ))))
+        (i32.store16 (global.get $wstp) (call $swap (i32.load16_u (i32.add (local.get $pc) (call $signed (local.get $t))))))
         (br $loop)
 
         );; STR2
         (local.set $t (i32.load8_u (global.get $wstp)))
         (local.set $n (i32.load16_u (i32.add (global.get $wstp) (i32.const 1))))
         (global.set $wstp (i32.sub (global.get $wstp) (i32.const -3)))
-        (i32.store16 (i32.add (local.get $pc) 
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        ) (call $swap (local.get $n)))
+        (i32.store16 (i32.add (local.get $pc) (call $signed (local.get $t))) (call $swap (local.get $n)))
         (br $loop)
 
         );; LDA2
@@ -507,9 +491,7 @@
         (br $loop)
 
         );; JMI
-        (local.set $pc (i32.add (i32.const 2) (i32.add (local.get $pc) 
-            (i32.shr_s (i32.shl (call $swap (i32.load16_u (local.get $pc))) (i32.const 16)) (i32.const 16))
-        )))
+        (local.set $pc (i32.add (i32.const 2) (i32.add (local.get $pc) (call $signed2 (call $swap (i32.load16_u (local.get $pc)))))))
         (br $loop)
 
         );; INCr
@@ -590,18 +572,14 @@
         );; JMPr
         (local.set $t (i32.load8_u (global.get $rstp)))
         (global.set $rstp (i32.sub (global.get $rstp) (i32.const -1)))
-        (local.set $pc (i32.add (local.get $pc) 
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        ))
+        (local.set $pc (i32.add (local.get $pc) (call $signed (local.get $t))))
         (br $loop)
 
         );; JCNr
         (local.set $t (i32.load8_u (global.get $rstp)))
         (local.set $n (i32.load8_u (i32.add (global.get $rstp) (i32.const 1))))
         (global.set $rstp (i32.sub (global.get $rstp) (i32.const -2)))
-        (if (local.get $n) (then (local.set $pc (i32.add (local.get $pc) 
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        ))))
+        (if (local.get $n) (then (local.set $pc (i32.add (local.get $pc) (call $signed (local.get $t))))))
         (br $loop)
 
         );; JSRr
@@ -609,9 +587,7 @@
         (global.set $rstp (i32.sub (global.get $rstp) (i32.const -1)))
         (global.set $wstp (i32.sub (global.get $wstp) (i32.const 2)))
         (i32.store16 (global.get $wstp) (local.get $pc))
-        (local.set $pc (i32.add (local.get $pc) 
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        ))
+        (local.set $pc (i32.add (local.get $pc) (call $signed (local.get $t))))
         (br $loop)
 
         );; STHr
@@ -635,18 +611,14 @@
 
         );; LDRr
         (local.set $t (i32.load8_u (global.get $rstp)))
-        (i32.store8 (global.get $rstp) (i32.load8_u (i32.add (local.get $pc)
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        )))
+        (i32.store8 (global.get $rstp) (i32.load8_u (i32.add (local.get $pc) (call $signed (local.get $t)))))
         (br $loop)
 
         );; STRr
         (local.set $t (i32.load8_u (global.get $rstp)))
         (local.set $n (i32.load8_u (i32.add (global.get $rstp) (i32.const 1))))
         (global.set $rstp (i32.sub (global.get $rstp) (i32.const -2)))
-        (i32.store8 (i32.add (local.get $pc) 
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        ) (local.get $n))
+        (i32.store8 (i32.add (local.get $pc) (call $signed (local.get $t))) (local.get $n))
         (br $loop)
 
         );; LDAr
@@ -734,9 +706,7 @@
         );; JSI
         (global.set $rstp (i32.sub (global.get $rstp) (i32.const 2)))
         (i32.store16 (global.get $rstp) (local.tee $n (i32.add (local.get $pc) (i32.const 2))))
-        (local.set $pc (i32.add (local.get $n) 
-            (i32.shr_s (i32.shl (call $swap (i32.load16_u (local.get $pc))) (i32.const 16)) (i32.const 16))
-        ))
+        (local.set $pc (i32.add (local.get $n) (call $signed2 (call $swap (i32.load16_u (local.get $pc))))))
         (br $loop)
 
         );; INC2r
@@ -858,18 +828,14 @@
         );; LDR2r
         (local.set $t (i32.load8_u (global.get $rstp)))
         (global.set $rstp (i32.sub (global.get $rstp) (i32.const 1)))
-        (i32.store16 (global.get $rstp) (call $swap (i32.load16_u (i32.add (local.get $pc)
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        ))))
+        (i32.store16 (global.get $rstp) (call $swap (i32.load16_u (i32.add (local.get $pc) (call $signed (local.get $t))))))
         (br $loop)
 
         );; STR2r
         (local.set $t (i32.load8_u (global.get $rstp)))
         (local.set $n (i32.load16_u (i32.add (global.get $rstp) (i32.const 1))))
         (global.set $rstp (i32.sub (global.get $rstp) (i32.const -3)))
-        (i32.store16 (i32.add (local.get $pc) 
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        ) (call $swap (local.get $n)))
+        (i32.store16 (i32.add (local.get $pc) (call $signed (local.get $t))) (call $swap (local.get $n)))
         (br $loop)
 
         );; LDA2r
@@ -1043,26 +1009,20 @@
 
         );; JMPk
         (local.set $t (i32.load8_u (global.get $wstp)))
-        (local.set $pc (i32.add (local.get $pc) 
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        ))
+        (local.set $pc (i32.add (local.get $pc) (call $signed (local.get $t))))
         (br $loop)
 
         );; JCNk
         (local.set $t (i32.load8_u (global.get $wstp)))
         (local.set $n (i32.load8_u (i32.add (global.get $wstp) (i32.const 1))))
-        (if (local.get $n) (then (local.set $pc (i32.add (local.get $pc) 
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        ))))
+        (if (local.get $n) (then (local.set $pc (i32.add (local.get $pc) (call $signed (local.get $t))))))
         (br $loop)
 
         );; JSRk
         (local.set $t (i32.load8_u (global.get $wstp)))
         (global.set $rstp (i32.sub (global.get $rstp) (i32.const 2)))
         (i32.store16 (global.get $rstp) (local.get $pc))
-        (local.set $pc (i32.add (local.get $pc) 
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        ))
+        (local.set $pc (i32.add (local.get $pc) (call $signed (local.get $t))))
         (br $loop)
 
         );; STHk
@@ -1086,17 +1046,13 @@
         );; LDRk
         (local.set $t (i32.load8_u (global.get $wstp)))
         (global.set $wstp (i32.sub (global.get $wstp) (i32.const 1)))
-        (i32.store8 (global.get $wstp) (i32.load8_u (i32.add (local.get $pc)
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        )))
+        (i32.store8 (global.get $wstp) (i32.load8_u (i32.add (local.get $pc) (call $signed (local.get $t)))))
         (br $loop)
 
         );; STRk
         (local.set $t (i32.load8_u (global.get $wstp)))
         (local.set $n (i32.load8_u (i32.add (global.get $wstp) (i32.const 1))))
-        (i32.store8 (i32.add (local.get $pc) 
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        ) (local.get $n))
+        (i32.store8 (i32.add (local.get $pc) (call $signed (local.get $t))) (local.get $n))
         (br $loop)
 
         );; LDAk
@@ -1302,17 +1258,13 @@
         );; LDR2k
         (local.set $t (i32.load8_u (global.get $wstp)))
         (global.set $wstp (i32.sub (global.get $wstp) (i32.const 2)))
-        (i32.store16 (global.get $wstp) (call $swap (i32.load16_u (i32.add (local.get $pc)
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        ))))
+        (i32.store16 (global.get $wstp) (call $swap (i32.load16_u (i32.add (local.get $pc) (call $signed (local.get $t))))))
         (br $loop)
 
         );; STR2k
         (local.set $t (i32.load8_u (global.get $wstp)))
         (local.set $n (i32.load16_u (i32.add (global.get $wstp) (i32.const 1))))
-        (i32.store16 (i32.add (local.get $pc) 
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        ) (call $swap (local.get $n)))
+        (i32.store16 (i32.add (local.get $pc) (call $signed (local.get $t))) (call $swap (local.get $n)))
         (br $loop)
 
         );; LDA2k
@@ -1485,26 +1437,20 @@
 
         );; JMPkr
         (local.set $t (i32.load8_u (global.get $rstp)))
-        (local.set $pc (i32.add (local.get $pc) 
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        ))
+        (local.set $pc (i32.add (local.get $pc) (call $signed (local.get $t))))
         (br $loop)
 
         );; JCNkr
         (local.set $t (i32.load8_u (global.get $rstp)))
         (local.set $n (i32.load8_u (i32.add (global.get $rstp) (i32.const 1))))
-        (if (local.get $n) (then (local.set $pc (i32.add (local.get $pc) 
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        ))))
+        (if (local.get $n) (then (local.set $pc (i32.add (local.get $pc) (call $signed (local.get $t))))))
         (br $loop)
 
         );; JSRkr
         (local.set $t (i32.load8_u (global.get $rstp)))
         (global.set $wstp (i32.sub (global.get $wstp) (i32.const 2)))
         (i32.store16 (global.get $wstp) (local.get $pc))
-        (local.set $pc (i32.add (local.get $pc) 
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        ))
+        (local.set $pc (i32.add (local.get $pc) (call $signed (local.get $t))))
         (br $loop)
 
         );; STHkr
@@ -1528,17 +1474,13 @@
         );; LDRkr
         (local.set $t (i32.load8_u (global.get $rstp)))
         (global.set $rstp (i32.sub (global.get $rstp) (i32.const 1)))
-        (i32.store8 (global.get $rstp) (i32.load8_u (i32.add (local.get $pc)
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        )))
+        (i32.store8 (global.get $rstp) (i32.load8_u (i32.add (local.get $pc) (call $signed (local.get $t)))))
         (br $loop)
 
         );; STRkr
         (local.set $t (i32.load8_u (global.get $rstp)))
         (local.set $n (i32.load8_u (i32.add (global.get $rstp) (i32.const 1))))
-        (i32.store8 (i32.add (local.get $pc) 
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        ) (local.get $n))
+        (i32.store8 (i32.add (local.get $pc) (call $signed (local.get $t))) (local.get $n))
         (br $loop)
 
         );; LDAkr
@@ -1744,17 +1686,13 @@
         );; LDR2kr
         (local.set $t (i32.load8_u (global.get $rstp)))
         (global.set $rstp (i32.sub (global.get $rstp) (i32.const 2)))
-        (i32.store16 (global.get $rstp) (call $swap (i32.load16_u (i32.add (local.get $pc)
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        ))))
+        (i32.store16 (global.get $rstp) (call $swap (i32.load16_u (i32.add (local.get $pc) (call $signed (local.get $t))))))
         (br $loop)
 
         );; STR2kr
         (local.set $t (i32.load8_u (global.get $rstp)))
         (local.set $n (i32.load16_u (i32.add (global.get $rstp) (i32.const 1))))
-        (i32.store16 (i32.add (local.get $pc) 
-            (i32.shr_s (i32.shl (local.get $t) (i32.const 24)) (i32.const 24))
-        ) (call $swap (local.get $n)))
+        (i32.store16 (i32.add (local.get $pc) (call $signed (local.get $t))) (call $swap (local.get $n)))
         (br $loop)
 
         );; LDA2kr
@@ -1848,6 +1786,12 @@
     (i32.or
       (i32.shl (i32.and (local.get $v) (i32.const 0xff)) (i32.const 8))
       (i32.shr_u (i32.and (local.get $v) (i32.const 0xff00)) (i32.const 8))))
+
+  (func $signed (param $v i32) (result i32)
+    (i32.shr_s (i32.shl (local.get $v) (i32.const 24)) (i32.const 24)))
+
+  (func $signed2 (param $v i32) (result i32)
+    (i32.shr_s (i32.shl (local.get $v) (i32.const 16)) (i32.const 16)))
 
   (func $reset (export "reset")
     (global.set $wstp (i32.const 0x100ff))
