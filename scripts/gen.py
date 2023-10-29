@@ -785,53 +785,55 @@ for ins, inss in enumerate(instructions):
         code = instructions[(ins & 0x3f) if (ins & 0x1f) else
                             (ins & 0xa0)][1][1:]
     stack = "rst" if mode_rst else "wst"
+    offset = "0x10100" if mode_rst else "0x10000"
     flipstack = "wst" if mode_rst else "rst"
+    flipoffset = "0x10000" if mode_rst else "0x10100"
     ncode = ""
     for c in code.split("\n"):
         c = re.sub(r"\(#T2! (.*)\)\s*$",
-                   r"(i32.store8 (i32.add (global.get $%sp) (i32.const 1)) (i32.shr_u (local.tee $val \1) (i32.const 8))) (i32.store8 (global.get $%sp) (i32.and (local.get $val) (i32.const 0xff)))" % (stack,stack), c)
-        c = c.replace("(#T2)", "(i32.or (i32.shl (i32.load8_u (i32.add (global.get $%sp) (i32.const 0x1))) (i32.const 8)) (i32.load8_u (global.get $%sp)))" % (stack, stack))
+                   r"(i32.store8 offset=%s (i32.add (global.get $%sp) (i32.const 1)) (i32.shr_u (local.tee $val \1) (i32.const 8))) (i32.store8 offset=%s (global.get $%sp) (i32.and (local.get $val) (i32.const 0xff)))" % (offset, stack,offset, stack), c)
+        c = c.replace("(#T2)", "(i32.or (i32.shl (i32.load8_u offset=%s (i32.add (global.get $%sp) (i32.const 0x1))) (i32.const 8)) (i32.load8_u offset=%s (global.get $%sp)))" % (offset,stack,offset, stack))
         c = re.sub(r"\(#T! (.*)\)\s*$",
-                   r"(i32.store8 (global.get $%sp) \1)" % stack, c)
-        c = c.replace("(#T)", "(i32.load8_u (global.get $%sp))" % stack)
+                   r"(i32.store8 offset=%s (global.get $%sp) \1)" % ( offset, stack), c)
+        c = c.replace("(#T)", "(i32.load8_u offset=%s (global.get $%sp))" % (offset, stack))
         c = re.sub(r"\(#~T2! (.*)\)\s*$",
-                   r"(i32.store8 (i32.add (global.get $%sp) (i32.const 0x1)) (i32.shr_u (local.tee $val \1) (i32.const 8))) (i32.store8 (global.get $%sp) (i32.and (local.get $val) (i32.const 0xff)))" % (flipstack, flipstack), c)
+                   r"(i32.store8 offset=%s (i32.add (global.get $%sp) (i32.const 0x1)) (i32.shr_u (local.tee $val \1) (i32.const 8))) (i32.store8 offset=%s (global.get $%sp) (i32.and (local.get $val) (i32.const 0xff)))" % (flipoffset, flipstack, flipoffset, flipstack), c)
         c = re.sub(r"\(#~T! (.*)\)\s*$",
-                   r"(i32.store8 (global.get $%sp) \1)" % flipstack, c)
+                   r"(i32.store8 offset=%s (global.get $%sp) \1)" % (flipoffset, flipstack), c)
 
         c = re.sub(
             r"\(#N2! (.*)\)\s*$",
-            r"(i32.store8 (i32.add (global.get $%sp) (i32.const 3)) (i32.shr_u (local.tee $val \1) (i32.const 8))) (i32.store8 (i32.add (global.get $%sp) (i32.const 2)) (i32.and (local.get $val) (i32.const 0xff)))" %
-            (stack, stack), c)
+            r"(i32.store8 offset=%s (i32.add (global.get $%sp) (i32.const 3)) (i32.shr_u (local.tee $val \1) (i32.const 8))) (i32.store8 offset=%s (i32.add (global.get $%sp) (i32.const 2)) (i32.and (local.get $val) (i32.const 0xff)))" %
+            (offset, stack, offset, stack), c)
         c = c.replace(
             "(#N2)",
-            "(i32.or (i32.shl (i32.load8_u (i32.add (global.get $%sp) (i32.const 3))) (i32.const 8)) (i32.load8_u (i32.add (global.get $%sp) (i32.const 2))))" % (stack, stack))
+            "(i32.or (i32.shl (i32.load8_u offset=%s (i32.add (global.get $%sp) (i32.const 3))) (i32.const 8)) (i32.load8_u offset=%s (i32.add (global.get $%sp) (i32.const 2))))" % (offset, stack, offset, stack))
         c = re.sub(
             r"\(#N! (.*)\)\s*$",
-            r"(i32.store8 (i32.add (global.get $%sp) (i32.const 1)) \1)" %
-            stack, c)
+            r"(i32.store8 offset=%s (i32.add (global.get $%sp) (i32.const 1)) \1)" %
+            (offset, stack), c)
         c = c.replace(
             "(#N)",
-            "(i32.load8_u (i32.add (global.get $%sp) (i32.const 1)))" % stack)
+            "(i32.load8_u offset=%s (i32.add (global.get $%sp) (i32.const 1)))" % (offset, stack))
 
         c = re.sub(
             r"\(#L2! (.*)\)\s*$",
-            r"(i32.store8 (i32.add (global.get $%sp) (i32.const 5)) (i32.shr_u (local.tee $val \1) (i32.const 8))) (i32.store8 (i32.add (global.get $%sp) (i32.const 4)) (i32.and (local.get $val) (i32.const 0xff)))" %
-            (stack, stack), c)
+            r"(i32.store8 offset=%s (i32.add (global.get $%sp) (i32.const 5)) (i32.shr_u (local.tee $val \1) (i32.const 8))) (i32.store8 offset=%s (i32.add (global.get $%sp) (i32.const 4)) (i32.and (local.get $val) (i32.const 0xff)))" %
+            (offset, stack, offset, stack), c)
         c = c.replace(
             "(#L2)",
-            "(i32.or (i32.shl (i32.load8_u (i32.add (global.get $%sp) (i32.const 5))) (i32.const 8)) (i32.load8_u (i32.add (global.get $%sp) (i32.const 4))))" % (stack, stack))
+            "(i32.or (i32.shl (i32.load8_u offset=%s (i32.add (global.get $%sp) (i32.const 5))) (i32.const 8)) (i32.load8_u offset=%s (i32.add (global.get $%sp) (i32.const 4))))" % (offset,stack, offset, stack))
         c = re.sub(
             r"\(#L! (.*)\)\s*$",
-            r"(i32.store8 (i32.add (global.get $%sp) (i32.const 2)) \1)" %
-            stack, c)
+            r"(i32.store8 offset=%s (i32.add (global.get $%sp) (i32.const 2)) \1)" %
+            (offset,stack), c)
         c = c.replace(
             "(#L)",
-            "(i32.load8_u (i32.add (global.get $%sp) (i32.const 2)))" % stack)
+            "(i32.load8_u offset=%s (i32.add (global.get $%sp) (i32.const 2)))" % (offset,stack))
 
         c = c.replace(
             "(#H2)",
-            "(i32.or (i32.shl (i32.load8_u (i32.add (global.get $%sp) (i32.const 2))) (i32.const 8)) (i32.load8_u (i32.add (global.get $%sp) (i32.const 1))))" % (stack, stack))
+            "(i32.or (i32.shl (i32.load8_u offset=%s (i32.add (global.get $%sp) (i32.const 2))) (i32.const 8)) (i32.load8_u offset=%s (i32.add (global.get $%sp) (i32.const 1))))" % (offset,stack, offset, stack))
 
         c = re.sub(r"\(#set (\-?\d+) (-?\d+)\)",
                    lambda m: replace_set(m, mode_rst, mode_keep, False), c)
@@ -867,8 +869,8 @@ out += """        )));; end
     (i32.shr_s (i32.shl (local.get $v) (i32.const 16)) (i32.const 16)))
 
   (func $reset (export "reset")
-    (global.set $wstp (i32.const 0x100ff))
-    (global.set $rstp (i32.const 0x101ff))
+    (global.set $wstp (i32.const 0xff))
+    (global.set $rstp (i32.const 0xff))
     (memory.fill (i32.const 0x0) (i32.const 0x0) (i32.const 0x10300)))
 
   (func (export "wstp") (result i32) (global.get $wstp))

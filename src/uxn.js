@@ -46,7 +46,7 @@ function Uxn() {
       return wst[0xfe - i];
     },
     ptr: () => {
-      return 0x100ff - core.wstp();
+      return 0xff - core.wstp();
     },
   };
 
@@ -55,7 +55,7 @@ function Uxn() {
       return rst[0xfe - i];
     },
     ptr: () => {
-      return 0x101ff - core.rstp();
+      return 0xff - core.rstp();
     },
   };
 }
