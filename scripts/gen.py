@@ -743,10 +743,12 @@ out = """(module $uxn
   (import "system" "dei" (func $dei (param i32) (result i32)))
 
   (func (export "eval") (param $pc i32)
-    (local $ins i32)
     (local $t i32)
     (local $n i32)
     (local $l i32)
+    (local $ins i32)
+    (local $val i32)
+
     (if (i32.eqz (local.get $pc)) (then (return)))
     (if (i32.load8_u (i32.const 0x1020f)) (then (return)))
     (block $endLoop
@@ -787,23 +789,23 @@ for ins, inss in enumerate(instructions):
     ncode = ""
     for c in code.split("\n"):
         c = re.sub(r"\(#T2! (.*)\)\s*$",
-                   r"(i32.store16 (global.get $%sp) \1)" % stack, c)
-        c = c.replace("(#T2)", "(i32.load16_u (global.get $%sp))" % stack)
+                   r"(i32.store8 (i32.add (global.get $%sp) (i32.const 1)) (i32.shr_u (local.tee $val \1) (i32.const 8))) (i32.store8 (global.get $%sp) (i32.and (local.get $val) (i32.const 0xff)))" % (stack,stack), c)
+        c = c.replace("(#T2)", "(i32.or (i32.shl (i32.load8_u (i32.add (global.get $%sp) (i32.const 0x1))) (i32.const 8)) (i32.load8_u (global.get $%sp)))" % (stack, stack))
         c = re.sub(r"\(#T! (.*)\)\s*$",
                    r"(i32.store8 (global.get $%sp) \1)" % stack, c)
         c = c.replace("(#T)", "(i32.load8_u (global.get $%sp))" % stack)
         c = re.sub(r"\(#~T2! (.*)\)\s*$",
-                   r"(i32.store16 (global.get $%sp) \1)" % flipstack, c)
+                   r"(i32.store8 (i32.add (global.get $%sp) (i32.const 0x1)) (i32.shr_u (local.tee $val \1) (i32.const 8))) (i32.store8 (global.get $%sp) (i32.and (local.get $val) (i32.const 0xff)))" % (flipstack, flipstack), c)
         c = re.sub(r"\(#~T! (.*)\)\s*$",
                    r"(i32.store8 (global.get $%sp) \1)" % flipstack, c)
 
         c = re.sub(
             r"\(#N2! (.*)\)\s*$",
-            r"(i32.store16 (i32.add (global.get $%sp) (i32.const 2)) \1)" %
-            stack, c)
+            r"(i32.store8 (i32.add (global.get $%sp) (i32.const 3)) (i32.shr_u (local.tee $val \1) (i32.const 8))) (i32.store8 (i32.add (global.get $%sp) (i32.const 2)) (i32.and (local.get $val) (i32.const 0xff)))" %
+            (stack, stack), c)
         c = c.replace(
             "(#N2)",
-            "(i32.load16_u (i32.add (global.get $%sp) (i32.const 2)))" % stack)
+            "(i32.or (i32.shl (i32.load8_u (i32.add (global.get $%sp) (i32.const 3))) (i32.const 8)) (i32.load8_u (i32.add (global.get $%sp) (i32.const 2))))" % (stack, stack))
         c = re.sub(
             r"\(#N! (.*)\)\s*$",
             r"(i32.store8 (i32.add (global.get $%sp) (i32.const 1)) \1)" %
@@ -814,11 +816,11 @@ for ins, inss in enumerate(instructions):
 
         c = re.sub(
             r"\(#L2! (.*)\)\s*$",
-            r"(i32.store16 (i32.add (global.get $%sp) (i32.const 4)) \1)" %
-            stack, c)
+            r"(i32.store8 (i32.add (global.get $%sp) (i32.const 5)) (i32.shr_u (local.tee $val \1) (i32.const 8))) (i32.store8 (i32.add (global.get $%sp) (i32.const 4)) (i32.and (local.get $val) (i32.const 0xff)))" %
+            (stack, stack), c)
         c = c.replace(
             "(#L2)",
-            "(i32.load16_u (i32.add (global.get $%sp) (i32.const 4)))" % stack)
+            "(i32.or (i32.shl (i32.load8_u (i32.add (global.get $%sp) (i32.const 5))) (i32.const 8)) (i32.load8_u (i32.add (global.get $%sp) (i32.const 4))))" % (stack, stack))
         c = re.sub(
             r"\(#L! (.*)\)\s*$",
             r"(i32.store8 (i32.add (global.get $%sp) (i32.const 2)) \1)" %
@@ -829,7 +831,7 @@ for ins, inss in enumerate(instructions):
 
         c = c.replace(
             "(#H2)",
-            "(i32.load16_u (i32.add (global.get $%sp) (i32.const 1)))" % stack)
+            "(i32.or (i32.shl (i32.load8_u (i32.add (global.get $%sp) (i32.const 2))) (i32.const 8)) (i32.load8_u (i32.add (global.get $%sp) (i32.const 1))))" % (stack, stack))
 
         c = re.sub(r"\(#set (\-?\d+) (-?\d+)\)",
                    lambda m: replace_set(m, mode_rst, mode_keep, False), c)
