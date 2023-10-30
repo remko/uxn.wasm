@@ -1,6 +1,8 @@
 import Uxn from "../uxn";
 import suite from "./suite";
 
+const BENCHMARK_RUNS = 5;
+
 document.body.innerHTML = `
 <h1>Uxn.wasm Benchmarks</h1>
 <div>
@@ -22,9 +24,9 @@ startButtonEl.onclick = async () => {
     thEl.appendChild(document.createTextNode(b.name));
     trEl.appendChild(thEl);
 
-    const uxn = new Uxn();
-    await b.init(uxn);
-    for (let i = 0; i < 5; i++) {
+    let uxn = new Uxn();
+    uxn = await b.init(uxn);
+    for (let i = 0; i < BENCHMARK_RUNS; i++) {
       const tdEl = document.createElement("td");
       const valueEl = document.createTextNode("⌛️");
       tdEl.appendChild(valueEl);

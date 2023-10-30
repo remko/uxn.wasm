@@ -1,5 +1,6 @@
 import mandelbrot from "./mandelbrot.tal";
 import primes32 from "./primes32.tal";
+// import Uxn5 from "./uxn5";
 
 const PROGRAM_OFFSET = 0x100;
 
@@ -7,7 +8,7 @@ export default [
   {
     name: "mandelbrot",
     init: async (uxn) => {
-      await uxn.init();
+      return await uxn.init();
     },
     run: (uxn) => {
       uxn.load(mandelbrot);
@@ -15,10 +16,28 @@ export default [
     },
     check: () => {},
   },
+  // {
+  //   name: "mandelbrot (uxn5)",
+  //   init: async () => {
+  //     const uxn = new Uxn5({
+  //       onStep: () => {},
+  //       deo: () => {},
+  //       dei: (port) => {
+  //         return uxn.dev[port];
+  //       },
+  //     });
+  //     return uxn;
+  //   },
+  //   run: (uxn) => {
+  //     uxn.load(mandelbrot);
+  //     uxn.eval(PROGRAM_OFFSET);
+  //   },
+  //   check: () => {},
+  // },
   {
     name: "prime32",
     init: async (uxn) => {
-      await uxn.init({
+      return await uxn.init({
         deo: (port, value) => {
           switch (port) {
             case 0x18:

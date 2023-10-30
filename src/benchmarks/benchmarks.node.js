@@ -4,8 +4,8 @@ const Uxn = require("../uxn");
 (async () => {
   for (const b of suite) {
     console.log(b.name);
-    const uxn = new Uxn();
-    await b.init(uxn);
+    let uxn = new Uxn();
+    uxn = await b.init(uxn);
     for (let i = 0; i < 5; i++) {
       let value;
       const t1 = performance.now();
