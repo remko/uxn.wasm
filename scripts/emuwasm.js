@@ -875,22 +875,22 @@ function generate() {
           ...[
             [
               reg + "2!",
-              `(i32.store8 offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${
+              `(i32.store8 offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${regidx})) (i32.const 0xff)) (i32.and (local.tee $val #1) (i32.const 0xff))) (i32.store8 offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${
                 regidx + 1
-              })) (i32.const 0xff)) (i32.shr_u (local.tee $val #1) (i32.const 8))) (i32.store8 offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${regidx})) (i32.const 0xff)) (i32.and (local.get $val) (i32.const 0xff)))`,
+              })) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))`,
             ],
             [
               // Store short endianness-swapped
               reg + "2^!",
-              `(i32.store8 offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${regidx})) (i32.const 0xff)) (i32.shr_u (local.tee $val #1) (i32.const 8))) (i32.store8 offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${
+              `(i32.store8 offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${
                 regidx + 1
-              })) (i32.const 0xff)) (i32.and (local.get $val) (i32.const 0xff)))`,
+              })) (i32.const 0xff)) (i32.and (local.tee $val #1) (i32.const 0xff))) (i32.store8 offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${regidx})) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))`,
             ],
             [
               reg + "2",
-              `(i32.or (i32.shl (i32.load8_u offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${
+              `(i32.or (i32.load8_u offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${regidx})) (i32.const 0xff))) (i32.shl (i32.load8_u offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${
                 regidx + 1
-              })) (i32.const 0xff))) (i32.const 8)) (i32.load8_u offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${regidx})) (i32.const 0xff))))`,
+              })) (i32.const 0xff))) (i32.const 8)))`,
             ],
             // Load endianness-swapped
             [
