@@ -24,8 +24,8 @@ export function Uxn() {
     ).instance.exports;
     this.ram = new Uint8Array(core.memory.buffer, 0, 0x10300);
     this.dev = new Uint8Array(core.memory.buffer, 0x10200, 0x100);
-    wst = new Uint8Array(core.memory.buffer, 0x10000, 0xff);
-    rst = new Uint8Array(core.memory.buffer, 0x10100, 0xff);
+    wst = new Uint8Array(core.memory.buffer, 0x10000, 0x100);
+    rst = new Uint8Array(core.memory.buffer, 0x10100, 0x100);
   };
 
   this.load = (rom) => {
@@ -42,19 +42,19 @@ export function Uxn() {
 
   this.wst = {
     get: (i) => {
-      return wst[0xfe - i];
+      return wst[0xff - i];
     },
     ptr: () => {
-      return 0xff - core.wstp();
+      return (0x100 - core.wstp()) % 0x100;
     },
   };
 
   this.rst = {
     get: (i) => {
-      return rst[0xfe - i];
+      return rst[0xff - i];
     },
     ptr: () => {
-      return 0xff - core.rstp();
+      return (0x100 - core.rstp()) % 0x100;
     },
   };
 }

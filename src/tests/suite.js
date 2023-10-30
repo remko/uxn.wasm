@@ -306,6 +306,14 @@ function loadTests() {
     });
 
     describe("core", () => {
+      describe("stack", () => {
+        it("should support the full range", () => {
+          uxn.load(Array.from({ length: 256 }, (_, i) => [LIT, i]).flat());
+          uxn.eval(PROGRAM_OFFSET);
+          expect(uxn.wst.get(255)).to.eql(255);
+        });
+      });
+
       ////////////////////////////////////////////////////////////////////////////////
       // Basic instructions to get the test suite started
       ////////////////////////////////////////////////////////////////////////////////

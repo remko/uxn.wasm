@@ -970,8 +970,8 @@ function generate() {
 
 
   (func $reset (export "reset")
-    (global.set $wstp (i32.const 0xff))
-    (global.set $rstp (i32.const 0xff))
+    (global.set $wstp (i32.const 0x00))
+    (global.set $rstp (i32.const 0x00))
     (memory.fill (i32.const 0x0) (i32.const 0x0) (i32.const 0x10300)))
 
   (func (export "wstp") (result i32) (global.get $wstp))
