@@ -1,5 +1,5 @@
 const suite = require("./suite").default;
-const Uxn = require("../uxn");
+const Uxn = require("../uxn").Uxn;
 
 (async () => {
   for (const b of suite) {

@@ -1,6 +1,6 @@
 /* eslint no-unused-vars:0 */
 
-import Uxn from "../uxn";
+import { Uxn } from "../uxn";
 import { expect } from "chai";
 import testsTAL from "./tests.tal";
 import opctestTAL from "./opctest.tal";

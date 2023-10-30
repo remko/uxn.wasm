@@ -1,6 +1,6 @@
 import wasmModule from "./uxn.wat";
 
-function Uxn() {
+export function Uxn() {
   let core, wst, rst;
 
   const reset = () => {
@@ -58,5 +58,3 @@ function Uxn() {
     },
   };
 }
-
-module.exports = Uxn;

@@ -1,4 +1,4 @@
-import Uxn from "../uxn";
+import { Uxn } from "../uxn";
 import suite from "./suite";
 
 const BENCHMARK_RUNS = 5;
