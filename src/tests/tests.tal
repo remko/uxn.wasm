@@ -447,6 +447,20 @@
 
 	( Keep )
 	#12 #34 ADDk ADD ADD [ #8c ] TEST-BYTE
+	TYPE
+
+	( Stack )
+
+	( Binary operation with different starting positions of the stack )
+	        #01 #02 ADD [ #03 ] TEST-BYTE
+	POP     #01 #02 ADD [ #03 ] TEST-BYTE #ff
+	POP POP #01 #02 ADD [ #03 ] TEST-BYTE #ff #ff
+	OPCODE
+
+	( Stack operations interleaved with neighbouring memory accesses )
+	        #01 #02 #bc #ff DEO ADD [ #03 ] TEST-BYTE
+	POP     #01 #02 #bc #ff DEO ADD [ #03 ] TEST-BYTE #ff
+	POP POP #01 #02 #bc #ff DEO ADD [ #03 ] TEST-BYTE #ff #ff
 	OPCODE
 
 	#010e DEO
