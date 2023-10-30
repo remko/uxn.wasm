@@ -5,7 +5,7 @@ const Uxn = require("../uxn");
   for (const b of suite) {
     console.log(b.name);
     let uxn = new Uxn();
-    uxn = await b.init(uxn);
+    uxn = (await b.init(uxn)) || uxn;
     for (let i = 0; i < 5; i++) {
       let value;
       const t1 = performance.now();

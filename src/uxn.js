@@ -26,7 +26,6 @@ function Uxn() {
     this.dev = new Uint8Array(core.memory.buffer, 0x10200, 0x100);
     wst = new Uint8Array(core.memory.buffer, 0x10000, 0xff);
     rst = new Uint8Array(core.memory.buffer, 0x10100, 0xff);
-    return this;
   };
 
   this.load = (rom) => {

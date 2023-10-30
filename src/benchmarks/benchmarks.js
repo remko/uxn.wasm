@@ -25,7 +25,7 @@ startButtonEl.onclick = async () => {
     trEl.appendChild(thEl);
 
     let uxn = new Uxn();
-    uxn = await b.init(uxn);
+    uxn = (await b.init(uxn)) || uxn;
     for (let i = 0; i < BENCHMARK_RUNS; i++) {
       const tdEl = document.createElement("td");
       const valueEl = document.createTextNode("⌛️");

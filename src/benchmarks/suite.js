@@ -8,7 +8,7 @@ export default [
   {
     name: "mandelbrot",
     init: async (uxn) => {
-      return await uxn.init();
+      await uxn.init();
     },
     run: (uxn) => {
       uxn.load(mandelbrot);
