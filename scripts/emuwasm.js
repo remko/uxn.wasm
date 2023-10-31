@@ -120,7 +120,7 @@ const instructions = [
 (local.set $t (#Ts))
 (local.set $n (#N))
 (#set 2 -2)
-(if (local.get $n) (then (local.set $pc (i32.add (local.get $pc) (local.get $t)))))
+(local.set $pc (i32.add (local.get $pc) (select (local.get $t) (i32.const 0) (local.get $n))))
 `,
   ],
   [
@@ -405,7 +405,7 @@ const instructions = [
 (local.set $t (#T2))
 (local.set $n (#L))
 (#set 3 -3)
-(if (local.get $n) (then (local.set $pc (local.get $t))))
+(local.set $pc (select (local.get $t) (local.get $pc) (local.get $n)))
 `,
   ],
   [

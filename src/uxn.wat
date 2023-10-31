@@ -148,7 +148,7 @@
         (local.set $t (i32.load8_s offset=0x10000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)))
-        (if (local.get $n) (then (local.set $pc (i32.add (local.get $pc) (local.get $t)))))
+        (local.set $pc (i32.add (local.get $pc) (select (local.get $t) (i32.const 0) (local.get $n))))
         (br $loop)
 
         );; JSR
@@ -376,7 +376,7 @@
         (local.set $t (i32.or (i32.load8_u offset=0x10000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff)))
-        (if (local.get $n) (then (local.set $pc (local.get $t))))
+        (local.set $pc (select (local.get $t) (local.get $pc) (local.get $n)))
         (br $loop)
 
         );; JSR2
@@ -608,7 +608,7 @@
         (local.set $t (i32.load8_s offset=0x10100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)))
-        (if (local.get $n) (then (local.set $pc (i32.add (local.get $pc) (local.get $t)))))
+        (local.set $pc (i32.add (local.get $pc) (select (local.get $t) (i32.const 0) (local.get $n))))
         (br $loop)
 
         );; JSRr
@@ -837,7 +837,7 @@
         (local.set $t (i32.or (i32.load8_u offset=0x10100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff)))
-        (if (local.get $n) (then (local.set $pc (local.get $t))))
+        (local.set $pc (select (local.get $t) (local.get $pc) (local.get $n)))
         (br $loop)
 
         );; JSR2r
@@ -1071,7 +1071,7 @@
         );; JCNk
         (local.set $t (i32.load8_s offset=0x10000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
-        (if (local.get $n) (then (local.set $pc (i32.add (local.get $pc) (local.get $t)))))
+        (local.set $pc (i32.add (local.get $pc) (select (local.get $t) (i32.const 0) (local.get $n))))
         (br $loop)
 
         );; JSRk
@@ -1297,7 +1297,7 @@
         );; JCN2k
         (local.set $t (i32.or (i32.load8_u offset=0x10000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))))
-        (if (local.get $n) (then (local.set $pc (local.get $t))))
+        (local.set $pc (select (local.get $t) (local.get $pc) (local.get $n)))
         (br $loop)
 
         );; JSR2k
@@ -1526,7 +1526,7 @@
         );; JCNkr
         (local.set $t (i32.load8_s offset=0x10100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
-        (if (local.get $n) (then (local.set $pc (i32.add (local.get $pc) (local.get $t)))))
+        (local.set $pc (i32.add (local.get $pc) (select (local.get $t) (i32.const 0) (local.get $n))))
         (br $loop)
 
         );; JSRkr
@@ -1752,7 +1752,7 @@
         );; JCN2kr
         (local.set $t (i32.or (i32.load8_u offset=0x10100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))))
-        (if (local.get $n) (then (local.set $pc (local.get $t))))
+        (local.set $pc (select (local.get $t) (local.get $pc) (local.get $n)))
         (br $loop)
 
         );; JSR2kr

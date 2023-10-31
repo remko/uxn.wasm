@@ -2,7 +2,11 @@ const suite = require("./suite").default;
 const Uxn = require("../uxn").Uxn;
 
 (async () => {
+  const haveOnly = suite.some((s) => s.only);
   for (const b of suite) {
+    if (b.skip || (haveOnly && !b.only)) {
+      continue;
+    }
     console.log(b.name);
     let uxn = new Uxn();
     uxn = (await b.init(uxn)) || uxn;

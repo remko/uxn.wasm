@@ -17,7 +17,11 @@ const resultsEl = document.getElementById("results");
 startButtonEl.onclick = async () => {
   startButtonEl.disabled = true;
   resultsEl.replaceChildren();
+  const haveOnly = suite.some((s) => s.only);
   for (const b of suite) {
+    if (b.skip || (haveOnly && !b.only)) {
+      continue;
+    }
     const trEl = document.createElement("tr");
     resultsEl.appendChild(trEl);
     const thEl = document.createElement("th");

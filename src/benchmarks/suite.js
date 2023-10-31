@@ -1,5 +1,6 @@
 import mandelbrot from "./mandelbrot.tal";
 import primes32 from "./primes32.tal";
+import jcn from "./jcn.tal";
 // import Uxn5 from "./uxn5";
 
 const PROGRAM_OFFSET = 0x100;
@@ -12,6 +13,18 @@ export default [
     },
     run: (uxn) => {
       uxn.load(mandelbrot);
+      uxn.eval(PROGRAM_OFFSET);
+    },
+    check: () => {},
+  },
+  {
+    skip: true,
+    name: "jcn",
+    init: async (uxn) => {
+      await uxn.init();
+    },
+    run: (uxn) => {
+      uxn.load(jcn);
       uxn.eval(PROGRAM_OFFSET);
     },
     check: () => {},
