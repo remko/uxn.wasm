@@ -962,11 +962,12 @@ function generate() {
     }
   });
 
-  out += `        ));; end
+  out =
+    out.trim() +
+    `))
 
     (global.set $wstp (local.get $wstp))
     (global.set $rstp (local.get $rstp)))
-
 
   (func $reset (export "reset")
     (global.set $wstp (i32.const 0x00))
@@ -978,10 +979,8 @@ function generate() {
 
   (memory (export "memory") 2)
 
-  (global $wstp (mut i32) (i32.const -1))
-  (global $rstp (mut i32) (i32.const -1))
-
-  (start $reset))
+  (global $wstp (mut i32) (i32.const 0))
+  (global $rstp (mut i32) (i32.const 0)))
 `;
   console.log(out.trim());
 }

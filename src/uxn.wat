@@ -1888,13 +1888,10 @@
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x10100 (local.get $rstp) (i32.and (local.tee $val (i32.shl (i32.shr_u (local.get $n) (i32.and (local.get $t) (i32.const 0xf))) (i32.shr_u (local.get $t) (i32.const 4)))) (i32.const 0xff)))
         (i32.store8 offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
-        (br $loop)
-
-        ));; end
+        (br $loop)))
 
     (global.set $wstp (local.get $wstp))
     (global.set $rstp (local.get $rstp)))
-
 
   (func $reset (export "reset")
     (global.set $wstp (i32.const 0x00))
@@ -1906,7 +1903,5 @@
 
   (memory (export "memory") 2)
 
-  (global $wstp (mut i32) (i32.const -1))
-  (global $rstp (mut i32) (i32.const -1))
-
-  (start $reset))
+  (global $wstp (mut i32) (i32.const 0))
+  (global $rstp (mut i32) (i32.const 0)))
