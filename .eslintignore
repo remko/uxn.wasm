@@ -1,3 +1,4 @@
 public/uxn-wasm/dist
 build/
+dist/
 src/benchmarks/uxn5.js

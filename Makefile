@@ -54,7 +54,7 @@ update-tests:
 	(curl https://git.sr.ht/~rabbits/uxn5/blob/main/src/uxn.js && echo "export default Uxn;") > src/benchmarks/uxn5.js
 
 clean:
-	-rm -rf build public/uxn-wasm
+	-rm -rf build dist public/uxn-wasm
 
 lint:
 	$(ESLINT) .

@@ -78,7 +78,7 @@ const buildOptions = {
 const packageBuildOptions = {
   ...buildOptions,
   entryPoints: [path.join(__dirname, "src", "uxn")],
-  outfile: path.join(__dirname, "build", "uxn-wasm.js"),
+  outfile: path.join(__dirname, "dist", "uxn-wasm.js"),
   banner: {
     js: `// Uxn.wasm v${version}\n// https://github.com/remko/uxn.wasm`,
   },

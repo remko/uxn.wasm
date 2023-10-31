@@ -17,7 +17,7 @@ jobs:
       - run: make
       - name: "Upload artifacts"
         run: |
-          for f in `find build -name 'uxn-wasm.*'`; do
+          for f in `find dist -name 'uxn-wasm.*'`; do
             curl --fail \
               -H "Authorization: token $GITHUB_TOKEN" \
               -H "Content-Type: $(file -b --mime-type $f)" \

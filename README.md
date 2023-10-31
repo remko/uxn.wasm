@@ -2,7 +2,7 @@
 
 [![Build](https://github.com/remko/uxn.wasm/actions/workflows/build.yml/badge.svg)](https://github.com/remko/uxn.wasm/actions/workflows/build.yml)
 
-This repository implements the [Uxn](https://100r.co/site/uxn.html) virtual
+This is an implementation of the [Uxn](https://100r.co/site/uxn.html) virtual
 machine in WebAssembly. It provides a drop-in replacement for the
 [uxn5](https://git.sr.ht/~rabbits/uxn5) vanilla JS core.
 
