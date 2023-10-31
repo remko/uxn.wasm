@@ -803,7 +803,6 @@ function generate() {
     (local $t i32)
     (local $n i32)
     (local $l i32)
-    (local $ins i32)
     (local $val i32)
     (local $signedswap_val i32)
 
@@ -814,7 +813,7 @@ function generate() {
     (local.set $rstp (global.get $rstp))
     (block $endLoop
       (loop $loop
-        (local.set $ins (i32.load8_u (local.get $pc)))
+        (local.set $val (i32.load8_u (local.get $pc)))
         (local.set $pc (i32.add (local.get $pc) (i32.const 1)))
 
         ;; Uxntal Opcodes
@@ -828,7 +827,7 @@ function generate() {
       if (i % 16 === 0) {
         out += "\n        ";
       }
-      out += `(block $${ins[0]} `;
+      out += `(block $${ins[0]} `.padEnd(15);
     });
   out += "\n";
   out += "        (br_table";
@@ -840,7 +839,7 @@ function generate() {
   });
   out += "\n";
   out += "          $BRK\n";
-  out += "          (local.get $ins))\n\n";
+  out += "          (local.get $val))\n\n";
 
   instructions.forEach((inss, ins) => {
     const insn = inss[0];

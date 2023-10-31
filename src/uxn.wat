@@ -8,7 +8,6 @@
     (local $t i32)
     (local $n i32)
     (local $l i32)
-    (local $ins i32)
     (local $val i32)
     (local $signedswap_val i32)
 
@@ -19,28 +18,28 @@
     (local.set $rstp (global.get $rstp))
     (block $endLoop
       (loop $loop
-        (local.set $ins (i32.load8_u (local.get $pc)))
+        (local.set $val (i32.load8_u (local.get $pc)))
         (local.set $pc (i32.add (local.get $pc) (i32.const 1)))
 
         ;; Uxntal Opcodes
         ;; https://wiki.xxiivv.com/site/uxntal_opcodes.html
 
         (block $SFT2kr (block $EOR2kr (block $ORA2kr (block $AND2kr (block $DIV2kr (block $MUL2kr (block $SUB2kr (block $ADD2kr (block $DEO2kr (block $DEI2kr (block $STA2kr (block $LDA2kr (block $STR2kr (block $LDR2kr (block $STZ2kr (block $LDZ2kr 
-        (block $STH2kr (block $JSR2kr (block $JCN2kr (block $JMP2kr (block $LTH2kr (block $GTH2kr (block $NEQ2kr (block $EQU2kr (block $OVR2kr (block $DUP2kr (block $ROT2kr (block $SWP2kr (block $NIP2kr (block $POP2kr (block $INC2kr (block $LIT2r 
-        (block $SFTkr (block $EORkr (block $ORAkr (block $ANDkr (block $DIVkr (block $MULkr (block $SUBkr (block $ADDkr (block $DEOkr (block $DEIkr (block $STAkr (block $LDAkr (block $STRkr (block $LDRkr (block $STZkr (block $LDZkr 
-        (block $STHkr (block $JSRkr (block $JCNkr (block $JMPkr (block $LTHkr (block $GTHkr (block $NEQkr (block $EQUkr (block $OVRkr (block $DUPkr (block $ROTkr (block $SWPkr (block $NIPkr (block $POPkr (block $INCkr (block $LITr 
-        (block $SFT2k (block $EOR2k (block $ORA2k (block $AND2k (block $DIV2k (block $MUL2k (block $SUB2k (block $ADD2k (block $DEO2k (block $DEI2k (block $STA2k (block $LDA2k (block $STR2k (block $LDR2k (block $STZ2k (block $LDZ2k 
-        (block $STH2k (block $JSR2k (block $JCN2k (block $JMP2k (block $LTH2k (block $GTH2k (block $NEQ2k (block $EQU2k (block $OVR2k (block $DUP2k (block $ROT2k (block $SWP2k (block $NIP2k (block $POP2k (block $INC2k (block $LIT2 
-        (block $SFTk (block $EORk (block $ORAk (block $ANDk (block $DIVk (block $MULk (block $SUBk (block $ADDk (block $DEOk (block $DEIk (block $STAk (block $LDAk (block $STRk (block $LDRk (block $STZk (block $LDZk 
-        (block $STHk (block $JSRk (block $JCNk (block $JMPk (block $LTHk (block $GTHk (block $NEQk (block $EQUk (block $OVRk (block $DUPk (block $ROTk (block $SWPk (block $NIPk (block $POPk (block $INCk (block $LIT 
-        (block $SFT2r (block $EOR2r (block $ORA2r (block $AND2r (block $DIV2r (block $MUL2r (block $SUB2r (block $ADD2r (block $DEO2r (block $DEI2r (block $STA2r (block $LDA2r (block $STR2r (block $LDR2r (block $STZ2r (block $LDZ2r 
-        (block $STH2r (block $JSR2r (block $JCN2r (block $JMP2r (block $LTH2r (block $GTH2r (block $NEQ2r (block $EQU2r (block $OVR2r (block $DUP2r (block $ROT2r (block $SWP2r (block $NIP2r (block $POP2r (block $INC2r (block $JSI 
-        (block $SFTr (block $EORr (block $ORAr (block $ANDr (block $DIVr (block $MULr (block $SUBr (block $ADDr (block $DEOr (block $DEIr (block $STAr (block $LDAr (block $STRr (block $LDRr (block $STZr (block $LDZr 
-        (block $STHr (block $JSRr (block $JCNr (block $JMPr (block $LTHr (block $GTHr (block $NEQr (block $EQUr (block $OVRr (block $DUPr (block $ROTr (block $SWPr (block $NIPr (block $POPr (block $INCr (block $JMI 
-        (block $SFT2 (block $EOR2 (block $ORA2 (block $AND2 (block $DIV2 (block $MUL2 (block $SUB2 (block $ADD2 (block $DEO2 (block $DEI2 (block $STA2 (block $LDA2 (block $STR2 (block $LDR2 (block $STZ2 (block $LDZ2 
-        (block $STH2 (block $JSR2 (block $JCN2 (block $JMP2 (block $LTH2 (block $GTH2 (block $NEQ2 (block $EQU2 (block $OVR2 (block $DUP2 (block $ROT2 (block $SWP2 (block $NIP2 (block $POP2 (block $INC2 (block $JCI 
-        (block $SFT (block $EOR (block $ORA (block $AND (block $DIV (block $MUL (block $SUB (block $ADD (block $DEO (block $DEI (block $STA (block $LDA (block $STR (block $LDR (block $STZ (block $LDZ 
-        (block $STH (block $JSR (block $JCN (block $JMP (block $LTH (block $GTH (block $NEQ (block $EQU (block $OVR (block $DUP (block $ROT (block $SWP (block $NIP (block $POP (block $INC (block $BRK 
+        (block $STH2kr (block $JSR2kr (block $JCN2kr (block $JMP2kr (block $LTH2kr (block $GTH2kr (block $NEQ2kr (block $EQU2kr (block $OVR2kr (block $DUP2kr (block $ROT2kr (block $SWP2kr (block $NIP2kr (block $POP2kr (block $INC2kr (block $LIT2r  
+        (block $SFTkr  (block $EORkr  (block $ORAkr  (block $ANDkr  (block $DIVkr  (block $MULkr  (block $SUBkr  (block $ADDkr  (block $DEOkr  (block $DEIkr  (block $STAkr  (block $LDAkr  (block $STRkr  (block $LDRkr  (block $STZkr  (block $LDZkr  
+        (block $STHkr  (block $JSRkr  (block $JCNkr  (block $JMPkr  (block $LTHkr  (block $GTHkr  (block $NEQkr  (block $EQUkr  (block $OVRkr  (block $DUPkr  (block $ROTkr  (block $SWPkr  (block $NIPkr  (block $POPkr  (block $INCkr  (block $LITr   
+        (block $SFT2k  (block $EOR2k  (block $ORA2k  (block $AND2k  (block $DIV2k  (block $MUL2k  (block $SUB2k  (block $ADD2k  (block $DEO2k  (block $DEI2k  (block $STA2k  (block $LDA2k  (block $STR2k  (block $LDR2k  (block $STZ2k  (block $LDZ2k  
+        (block $STH2k  (block $JSR2k  (block $JCN2k  (block $JMP2k  (block $LTH2k  (block $GTH2k  (block $NEQ2k  (block $EQU2k  (block $OVR2k  (block $DUP2k  (block $ROT2k  (block $SWP2k  (block $NIP2k  (block $POP2k  (block $INC2k  (block $LIT2   
+        (block $SFTk   (block $EORk   (block $ORAk   (block $ANDk   (block $DIVk   (block $MULk   (block $SUBk   (block $ADDk   (block $DEOk   (block $DEIk   (block $STAk   (block $LDAk   (block $STRk   (block $LDRk   (block $STZk   (block $LDZk   
+        (block $STHk   (block $JSRk   (block $JCNk   (block $JMPk   (block $LTHk   (block $GTHk   (block $NEQk   (block $EQUk   (block $OVRk   (block $DUPk   (block $ROTk   (block $SWPk   (block $NIPk   (block $POPk   (block $INCk   (block $LIT    
+        (block $SFT2r  (block $EOR2r  (block $ORA2r  (block $AND2r  (block $DIV2r  (block $MUL2r  (block $SUB2r  (block $ADD2r  (block $DEO2r  (block $DEI2r  (block $STA2r  (block $LDA2r  (block $STR2r  (block $LDR2r  (block $STZ2r  (block $LDZ2r  
+        (block $STH2r  (block $JSR2r  (block $JCN2r  (block $JMP2r  (block $LTH2r  (block $GTH2r  (block $NEQ2r  (block $EQU2r  (block $OVR2r  (block $DUP2r  (block $ROT2r  (block $SWP2r  (block $NIP2r  (block $POP2r  (block $INC2r  (block $JSI    
+        (block $SFTr   (block $EORr   (block $ORAr   (block $ANDr   (block $DIVr   (block $MULr   (block $SUBr   (block $ADDr   (block $DEOr   (block $DEIr   (block $STAr   (block $LDAr   (block $STRr   (block $LDRr   (block $STZr   (block $LDZr   
+        (block $STHr   (block $JSRr   (block $JCNr   (block $JMPr   (block $LTHr   (block $GTHr   (block $NEQr   (block $EQUr   (block $OVRr   (block $DUPr   (block $ROTr   (block $SWPr   (block $NIPr   (block $POPr   (block $INCr   (block $JMI    
+        (block $SFT2   (block $EOR2   (block $ORA2   (block $AND2   (block $DIV2   (block $MUL2   (block $SUB2   (block $ADD2   (block $DEO2   (block $DEI2   (block $STA2   (block $LDA2   (block $STR2   (block $LDR2   (block $STZ2   (block $LDZ2   
+        (block $STH2   (block $JSR2   (block $JCN2   (block $JMP2   (block $LTH2   (block $GTH2   (block $NEQ2   (block $EQU2   (block $OVR2   (block $DUP2   (block $ROT2   (block $SWP2   (block $NIP2   (block $POP2   (block $INC2   (block $JCI    
+        (block $SFT    (block $EOR    (block $ORA    (block $AND    (block $DIV    (block $MUL    (block $SUB    (block $ADD    (block $DEO    (block $DEI    (block $STA    (block $LDA    (block $STR    (block $LDR    (block $STZ    (block $LDZ    
+        (block $STH    (block $JSR    (block $JCN    (block $JMP    (block $LTH    (block $GTH    (block $NEQ    (block $EQU    (block $OVR    (block $DUP    (block $ROT    (block $SWP    (block $NIP    (block $POP    (block $INC    (block $BRK    
         (br_table
           $BRK    $INC    $POP    $NIP    $SWP    $ROT    $DUP    $OVR    $EQU    $NEQ    $GTH    $LTH    $JMP    $JCN    $JSR    $STH    
           $LDZ    $STZ    $LDR    $STR    $LDA    $STA    $DEI    $DEO    $ADD    $SUB    $MUL    $DIV    $AND    $ORA    $EOR    $SFT    
@@ -59,7 +58,7 @@
           $LIT2r  $INC2kr $POP2kr $NIP2kr $SWP2kr $ROT2kr $DUP2kr $OVR2kr $EQU2kr $NEQ2kr $GTH2kr $LTH2kr $JMP2kr $JCN2kr $JSR2kr $STH2kr 
           $LDZ2kr $STZ2kr $LDR2kr $STR2kr $LDA2kr $STA2kr $DEI2kr $DEO2kr $ADD2kr $SUB2kr $MUL2kr $DIV2kr $AND2kr $ORA2kr $EOR2kr $SFT2kr 
           $BRK
-          (local.get $ins))
+          (local.get $val))
 
         );; BRK
         (br $endLoop)
