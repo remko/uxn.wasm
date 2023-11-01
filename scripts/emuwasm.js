@@ -429,6 +429,8 @@ const instructions = [
   ],
   [
     "LDZ2",
+    // Used to be (#T2^! (i32.load16_u (local.get $t))).
+    // Since LDZ2 does not wrap, this was ok, but performance is the same (and this is more consistent with LDZ)
     `
 (local.set $t (#T))
 (#set 1 1)
@@ -437,6 +439,8 @@ const instructions = [
   ],
   [
     "STZ2",
+    // Used to be (i32.store16 (local.get $t) (local.get $n))
+    // Since STZ2 does not wrap, this was ok, but peformance is actually worse.
     `
 (local.set $t (#T))
 (local.set $n (#N))
