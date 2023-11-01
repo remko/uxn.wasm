@@ -75,23 +75,25 @@
 		> Storing 12 in 0xffff, and 34 in 0x0000 )
 
 	#1234 #ffff STA2
-	#ffff LDA #0000 LDA ADD #46 EQU
-	#ffff LDA2 ADD #46 EQU
+	( LDA ) #0000 LDA #ffff LDA ADD #46 EQU
+	( LDA2 ) #ffff LDA2 ADD #46 EQU
 	AND ;Dict/ram-wrap test-part
 
 	( Part 9
 		> Testing that zero-page is wrapping )
 
-	#1234 #ff STZ2
-	#00ff LDA #0000 LDA ADD #46 EQU
-	;Dict/zp-wrap test-part
+	#5678 #ff STZ2
+	( LDZ ) #00 LDZ #ff LDZ ADD #ce EQU
+	( LDZ2 ) #ff LDZ2 ADD #ce EQU
+	AND ;Dict/zp-wrap test-part
 
 	( Part 10
 		> Testing that device page is wrapping )
 
 	#1234 #ff DEO2
-	#ff DEI #00 DEI ADD #46 EQU
-	;Dict/dev-wrap test-part
+	( DEI ) #00 DEI #ff DEI ADD #46 EQU
+	( DEI2 ) #ff DEI2 ADD #46 EQU
+	AND ;Dict/dev-wrap test-part
 	#0000 DEO #00ff DEO
 
 	( end )

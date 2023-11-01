@@ -486,7 +486,7 @@ const instructions = [
     `
 (local.set $t (#T))
 (#set 1 1)
-(#T! (call $dei (i32.add (local.get $t) (i32.const 1))))
+(#T! (call $dei (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xff))))
 (#N! (call $dei (local.get $t)))
 `,
   ],

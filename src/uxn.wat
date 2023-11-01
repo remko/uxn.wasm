@@ -446,7 +446,7 @@
         );; DEI2
         (local.set $t (i32.load8_u offset=0x10000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
-        (i32.store8 offset=0x10000 (local.get $wstp) (call $dei (i32.add (local.get $t) (i32.const 1))))
+        (i32.store8 offset=0x10000 (local.get $wstp) (call $dei (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xff))))
         (i32.store8 offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (call $dei (local.get $t)))
         (br $loop)
 
@@ -913,7 +913,7 @@
         );; DEI2r
         (local.set $t (i32.load8_u offset=0x10100 (local.get $rstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
-        (i32.store8 offset=0x10100 (local.get $rstp) (call $dei (i32.add (local.get $t) (i32.const 1))))
+        (i32.store8 offset=0x10100 (local.get $rstp) (call $dei (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xff))))
         (i32.store8 offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (call $dei (local.get $t)))
         (br $loop)
 
@@ -1375,7 +1375,7 @@
         );; DEI2k
         (local.set $t (i32.load8_u offset=0x10000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
-        (i32.store8 offset=0x10000 (local.get $wstp) (call $dei (i32.add (local.get $t) (i32.const 1))))
+        (i32.store8 offset=0x10000 (local.get $wstp) (call $dei (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xff))))
         (i32.store8 offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (call $dei (local.get $t)))
         (br $loop)
 
@@ -1836,7 +1836,7 @@
         );; DEI2kr
         (local.set $t (i32.load8_u offset=0x10100 (local.get $rstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
-        (i32.store8 offset=0x10100 (local.get $rstp) (call $dei (i32.add (local.get $t) (i32.const 1))))
+        (i32.store8 offset=0x10100 (local.get $rstp) (call $dei (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xff))))
         (i32.store8 offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (call $dei (local.get $t)))
         (br $loop)
 
