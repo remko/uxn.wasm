@@ -31,6 +31,7 @@ startButtonEl.onclick = async () => {
     let uxn = new Uxn();
     uxn = (await b.init(uxn)) || uxn;
     for (let i = 0; i < BENCHMARK_RUNS; i++) {
+      console.log("running %s (%s)", b.name, i);
       const tdEl = document.createElement("td");
       const valueEl = document.createTextNode("⌛️");
       tdEl.appendChild(valueEl);
@@ -38,10 +39,16 @@ startButtonEl.onclick = async () => {
       let value;
 
       try {
-        const t1 = performance.now();
-        b.run(uxn);
-        const t2 = performance.now();
-        value = ((t2 - t1) / 1000.0).toFixed(2) + "s";
+        await new Promise((resolve) => {
+          setTimeout(() => {
+            const t1 = performance.now();
+            b.run(uxn);
+            const t2 = performance.now();
+            value = ((t2 - t1) / 1000.0).toFixed(2) + "s";
+            console.log("-> %s", value);
+            resolve();
+          }, 100);
+        });
         b.check(uxn);
       } catch (e) {
         console.error(e);

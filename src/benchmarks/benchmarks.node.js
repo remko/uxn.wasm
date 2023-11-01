@@ -1,6 +1,8 @@
 const suite = require("./suite").default;
 const Uxn = require("../uxn").Uxn;
 
+const BENCHMARK_RUNS = 5;
+
 (async () => {
   const haveOnly = suite.some((s) => s.only);
   for (const b of suite) {
@@ -10,7 +12,7 @@ const Uxn = require("../uxn").Uxn;
     console.log(b.name);
     let uxn = new Uxn();
     uxn = (await b.init(uxn)) || uxn;
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < BENCHMARK_RUNS; i++) {
       let value;
       const t1 = performance.now();
       b.run(uxn);

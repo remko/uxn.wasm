@@ -56,42 +56,6 @@
     DUP4 ;is-prime32 JSR2 ( test for primality )
     STH ;emit/long JSR2 SP STHr ;emit/byte JSR2 NL
 
-    #ffff #fffb
-    DUP4 ;is-prime32 JSR2 ( test for primality )
-    STH ;emit/long JSR2 SP STHr ;emit/byte JSR2 NL
-
-    #ffff #fffb
-    DUP4 ;is-prime32 JSR2 ( test for primality )
-    STH ;emit/long JSR2 SP STHr ;emit/byte JSR2 NL
-
-    #ffff #fffb
-    DUP4 ;is-prime32 JSR2 ( test for primality )
-    STH ;emit/long JSR2 SP STHr ;emit/byte JSR2 NL
-
-    #ffff #fffb
-    DUP4 ;is-prime32 JSR2 ( test for primality )
-    STH ;emit/long JSR2 SP STHr ;emit/byte JSR2 NL
-
-    #ffff #fffb
-    DUP4 ;is-prime32 JSR2 ( test for primality )
-    STH ;emit/long JSR2 SP STHr ;emit/byte JSR2 NL
-
-    #ffff #fffb
-    DUP4 ;is-prime32 JSR2 ( test for primality )
-    STH ;emit/long JSR2 SP STHr ;emit/byte JSR2 NL
-
-    #ffff #fffb
-    DUP4 ;is-prime32 JSR2 ( test for primality )
-    STH ;emit/long JSR2 SP STHr ;emit/byte JSR2 NL
-
-    #ffff #fffb
-    DUP4 ;is-prime32 JSR2 ( test for primality )
-    STH ;emit/long JSR2 SP STHr ;emit/byte JSR2 NL
-
-    #ffff #fffb
-    DUP4 ;is-prime32 JSR2 ( test for primality )
-    STH ;emit/long JSR2 SP STHr ;emit/byte JSR2 NL
-
     EXIT
 
 ( include 32-bit math library )

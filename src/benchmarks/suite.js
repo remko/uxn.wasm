@@ -30,7 +30,7 @@ export default [
     check: () => {},
   },
   // {
-  //   name: "mandelbrot (uxn5)",
+  //   name: "mandelbrot (uxn.js)",
   //   init: async () => {
   //     const uxn = new Uxn5({
   //       onStep: () => {},
@@ -48,37 +48,78 @@ export default [
   //   check: () => {},
   // },
   {
-    name: "prime32",
+    name: "primes32",
     init: async (uxn) => {
       return await uxn.init({
         deo: (port, value) => {
           switch (port) {
             case 0x18:
-              uxn._prime32.output.push(value);
+              uxn._primes32.output.push(value);
               break;
             case 0xf:
-              uxn._prime32.result = value;
+              uxn._primes32.result = value;
               break;
           }
         },
       });
     },
     run: (uxn) => {
-      uxn._prime32 = { output: [] };
+      uxn._primes32 = { output: [] };
       uxn.load(primes32);
       uxn.eval(PROGRAM_OFFSET);
     },
     check: (uxn) => {
-      if (uxn._prime32.result !== 255) {
-        throw Error(`unexpected result: ${uxn._prime32.result}`);
+      if (uxn._primes32.result !== 255) {
+        throw Error(`unexpected result: ${uxn._primes32.result}`);
       }
       const output = new TextDecoder().decode(
-        Uint8Array.from(uxn._prime32.output)
+        Uint8Array.from(uxn._primes32.output)
       );
-      const expected = "fffffffb 01\n".repeat(14);
+      const expected = "fffffffb 01\n".repeat(5);
       if (output !== expected) {
         throw Error(`unexpected output: '${output}' != '${expected}`);
       }
     },
   },
+  // {
+  //   name: "primes32 (uxn.js)",
+  //   init: async () => {
+  //     const state = { output: [] };
+  //     const uxn = new Uxn5({
+  //       onStep: () => {},
+  //       deo: (port, value) => {
+  //         switch (port) {
+  //           case 0x18:
+  //             state.output.push(value);
+  //             break;
+  //           case 0xf:
+  //             state.result = value;
+  //             break;
+  //         }
+  //       },
+  //       dei: (port) => {
+  //         return uxn.dev[port];
+  //       },
+  //     });
+  //     uxn._primes32 = state;
+  //     return uxn;
+  //   },
+  //   run: (uxn) => {
+  //     uxn.load(primes32);
+  //     uxn.eval(PROGRAM_OFFSET);
+  //     return uxn;
+  //   },
+  //   check: (uxn) => {
+  //     if (uxn._primes32.result !== 255) {
+  //       throw Error(`unexpected result: ${uxn._primes32.result}`);
+  //     }
+  //     const output = new TextDecoder().decode(
+  //       Uint8Array.from(uxn._primes32.output)
+  //     );
+  //     const expected = "fffffffb 01\n".repeat(5);
+  //     if (output !== expected) {
+  //       throw Error(`unexpected output: '${output}' != '${expected}`);
+  //     }
+  //   },
+  // },
 ];
