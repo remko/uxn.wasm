@@ -445,6 +445,24 @@ function loadTests() {
         });
       });
 
+      describe("LDZ2", () => {
+        it("should work", () => {
+          uxn.load([LIT, 0x10, LDZ2]);
+          uxn.ram[0x10] = 0xab;
+          uxn.ram[0x11] = 0xcd;
+          uxn.eval(PROGRAM_OFFSET);
+          expect(wst()).to.eql([0xab, 0xcd]);
+        });
+
+        it("should not wrap around zero page", () => {
+          uxn.load([LIT, 0xff, LDZ2]);
+          uxn.ram[0xff] = 0xab;
+          uxn.ram[0x00] = 0xcd;
+          uxn.eval(PROGRAM_OFFSET);
+          expect(wst()).to.eql([0xab, 0x80]);
+        });
+      });
+
       ////////////////////////////////////////////////////////////////////////////////
 
       describe("uxn instruction test suite", () => {

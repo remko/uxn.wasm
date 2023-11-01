@@ -207,7 +207,7 @@ const instructions = [
 (local.set $t (#T))
 (local.set $n (#N))
 (#set 2 -2)
-(i32.store8 (i32.add (i32.const 0x10200) (local.get $t)) (local.get $n))
+(i32.store8 offset=0x10200 (local.get $t) (local.get $n))
 (call $deo (local.get $t) (local.get $n))
 `,
   ],
@@ -288,7 +288,7 @@ const instructions = [
     `
 (local.set $t (#T))
 (#set 0 -1)
-(if (local.get $t) (then (local.set $pc (i32.add (i32.const 2) (i32.add (local.get $pc) (#signedswap (i32.load16_u (local.get $pc))))))) (else (local.set $pc (i32.add (local.get $pc) (i32.const 2)))))
+(if (local.get $t) (then (local.set $pc (i32.add (i32.const 2) (i32.add (local.get $pc) (#peek16s (local.get $pc)))))) (else (local.set $pc (i32.add (local.get $pc) (i32.const 2)))))
 `,
   ],
   [
@@ -432,16 +432,17 @@ const instructions = [
     `
 (local.set $t (#T))
 (#set 1 1)
-(#T2^! (i32.load16_u (local.get $t)))
+(#T2<zmem! (local.get $t))
 `,
   ],
   [
     "STZ2",
     `
 (local.set $t (#T))
-(local.set $n (#H2^))
+(local.set $n (#N))
+(local.set $l (#L))
 (#set 3 -3)
-(i32.store16 (local.get $t) (local.get $n))
+(#poke2z (local.get $t) (local.get $l) (local.get $n))
 `,
   ],
   [
@@ -449,16 +450,17 @@ const instructions = [
     `
 (local.set $t (#Ts))
 (#set 1 1)
-(#T2^! (i32.load16_u (i32.add (local.get $pc) (local.get $t))))
+(#T2<meme! (i32.add (local.get $pc) (local.get $t)))
 `,
   ],
   [
     "STR2",
     `
 (local.set $t (#Ts))
-(local.set $n (#H2^))
+(local.set $n (#N))
+(local.set $l (#L))
 (#set 3 -3)
-(i32.store16 (i32.add (local.get $pc) (local.get $t)) (local.get $n))
+(#poke2e (i32.add (local.get $pc) (local.get $t)) (local.get $l) (local.get $n))
 `,
   ],
   [
@@ -466,16 +468,17 @@ const instructions = [
     `
 (local.set $t (#T2))
 (#set 2 0)
-(#T2^! (i32.load16_u (local.get $t)))
+(#T2<mem! (local.get $t))
 `,
   ],
   [
     "STA2",
     `
 (local.set $t (#T2))
-(local.set $n (#N2^))
+(local.set $n (#L))
+(local.set $l (#X))
 (#set 4 -4)
-(i32.store16 (local.get $t) (local.get $n))
+(#poke2 (local.get $t) (local.get $l) (local.get $n))
 `,
   ],
   [
@@ -494,10 +497,10 @@ const instructions = [
 (local.set $n (#N))
 (local.set $l (#L))
 (#set 3 -3)
-(i32.store8 (i32.add (i32.const 0x10200) (local.get $t)) (local.get $l))
+(i32.store8 offset=0x10200 (local.get $t) (local.get $l))
 (call $deo (local.get $t) (local.get $l))
-(i32.store8 (i32.add (i32.const 0x10201) (local.get $t)) (local.get $n))
-(call $deo (i32.add (local.get $t) (i32.const 1)) (local.get $n))
+(i32.store8 offset=0x10200 (local.tee $t (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xff))) (local.get $n))
+(call $deo (local.get $t) (local.get $n))
 `,
   ],
   [
@@ -575,7 +578,7 @@ const instructions = [
   [
     "JMI",
     `
-(local.set $pc (i32.add (i32.const 2) (i32.add (local.get $pc) (#signedswap (i32.load16_u (local.get $pc))))))
+(local.set $pc (i32.add (i32.const 2) (i32.add (local.get $pc) (#peek16s (local.get $pc)))))
 `,
   ],
   ["INCr", null],
@@ -614,7 +617,7 @@ const instructions = [
     `
 (#set 0 2)
 (#T2! (local.tee $n (i32.add (local.get $pc) (i32.const 2))))
-(local.set $pc (i32.add (local.get $n) (#signedswap (i32.load16_u (local.get $pc)))))
+(local.set $pc (i32.add (local.get $n) (#peek16s (local.get $pc))))
 `,
   ],
   ["INC2r", null],
@@ -691,7 +694,7 @@ const instructions = [
     "LIT2",
     `
 (#set 0 2)
-(#T2^! (i32.load16_u (local.get $pc)))
+(#T2<mem! (local.get $pc))
 (local.set $pc (i32.add (local.get $pc) (i32.const 2)))
 `,
   ],
@@ -804,7 +807,7 @@ function generate() {
     (local $n i32)
     (local $l i32)
     (local $val i32)
-    (local $signedswap_val i32)
+    (local $mval i32)
 
     (if (i32.eqz (local.get $pc)) (then (return)))
     (if (i32.load8_u (i32.const 0x1020f)) (then (return)))
@@ -855,14 +858,29 @@ function generate() {
 
     const macros = [
       [
-        "signedswap",
-        `(i32.shr_s (i32.or (i32.shl (i32.and (local.tee $signedswap_val #1) (i32.const 0xff)) (i32.const 24)) (i32.shl (i32.and (local.get $signedswap_val) (i32.const 0xff00)) (i32.const 8))) (i32.const 16))`,
+        "peek16s",
+        `(i32.or (i32.shr_s (i32.shl (i32.load8_u #1) (i32.const 24)) (i32.const 16)) (i32.load8_u (i32.and (i32.add #1 (i32.const 1)) (i32.const 0xffff))))`,
+      ],
+      [
+        "poke2",
+        `(i32.store8 #1 #2) (i32.store8 (i32.and (i32.add #1 (i32.const 1)) (i32.const 0xffff)) #3)`,
+      ],
+      // with an expression address
+      [
+        "poke2e",
+        `(i32.store8 (local.tee $mval (i32.and #1 (i32.const 0xffff))) #2) (i32.store8 (i32.and (i32.add (local.get $mval) (i32.const 1)) (i32.const 0xffff)) #3)`,
+      ],
+      // zero-page (not wrapping)
+      [
+        "poke2z",
+        `(i32.store8 #1 #2) (i32.store8 (i32.add #1 (i32.const 1)) #3)`,
       ],
     ];
     for (const [regname, regidx] of [
       ["T", 0],
       ["N", 2],
       ["L", 4],
+      ["X", 6],
       ["H", 1],
     ]) {
       let reg = regname;
@@ -879,24 +897,31 @@ function generate() {
               })) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))`,
             ],
             [
-              // Store short endianness-swapped
-              reg + "2^!",
+              // Copy from memory
+              reg + "2<mem!",
               `(i32.store8 offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${
                 regidx + 1
-              })) (i32.const 0xff)) (i32.and (local.tee $val #1) (i32.const 0xff))) (i32.store8 offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${regidx})) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))`,
+              })) (i32.const 0xff)) (i32.load8_u #1)) (i32.store8 offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${regidx})) (i32.const 0xff)) (i32.load8_u (i32.and (i32.add #1 (i32.const 1)) (i32.const 0xffff))))`,
+            ],
+            [
+              // Copy from zero-page memory
+              reg + "2<zmem!",
+              `(i32.store8 offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${
+                regidx + 1
+              })) (i32.const 0xff)) (i32.load8_u #1)) (i32.store8 offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${regidx})) (i32.const 0xff)) (i32.load8_u (i32.add #1 (i32.const 1))))`,
+            ],
+            [
+              // Copy from memory (with expression)
+              reg + "2<meme!",
+              `(i32.store8 offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${
+                regidx + 1
+              })) (i32.const 0xff)) (i32.load8_u (local.tee $mval #1))) (i32.store8 offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${regidx})) (i32.const 0xff)) (i32.load8_u (i32.and (i32.add (local.get $mval) (i32.const 1)) (i32.const 0xffff))))`,
             ],
             [
               reg + "2",
               `(i32.or (i32.load8_u offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${regidx})) (i32.const 0xff))) (i32.shl (i32.load8_u offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${
                 regidx + 1
               })) (i32.const 0xff))) (i32.const 8)))`,
-            ],
-            // Load endianness-swapped
-            [
-              reg + "2^",
-              `(i32.or (i32.shl (i32.load8_u offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${regidx})) (i32.const 0xff))) (i32.const 8)) (i32.load8_u offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${
-                regidx + 1
-              })) (i32.const 0xff))))`,
             ],
             ...(regidx % 2 === 0
               ? [

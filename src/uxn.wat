@@ -9,7 +9,7 @@
     (local $n i32)
     (local $l i32)
     (local $val i32)
-    (local $signedswap_val i32)
+    (local $mval i32)
 
     (if (i32.eqz (local.get $pc)) (then (return)))
     (if (i32.load8_u (i32.const 0x1020f)) (then (return)))
@@ -213,7 +213,7 @@
         (local.set $t (i32.load8_u offset=0x10000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)))
-        (i32.store8 (i32.add (i32.const 0x10200) (local.get $t)) (local.get $n))
+        (i32.store8 offset=0x10200 (local.get $t) (local.get $n))
         (call $deo (local.get $t) (local.get $n))
         (br $loop)
 
@@ -276,7 +276,7 @@
         );; JCI
         (local.set $t (i32.load8_u offset=0x10000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)))
-        (if (local.get $t) (then (local.set $pc (i32.add (i32.const 2) (i32.add (local.get $pc) (i32.shr_s (i32.or (i32.shl (i32.and (local.tee $signedswap_val (i32.load16_u (local.get $pc))) (i32.const 0xff)) (i32.const 24)) (i32.shl (i32.and (local.get $signedswap_val) (i32.const 0xff00)) (i32.const 8))) (i32.const 16)))))) (else (local.set $pc (i32.add (local.get $pc) (i32.const 2)))))
+        (if (local.get $t) (then (local.set $pc (i32.add (i32.const 2) (i32.add (local.get $pc) (i32.or (i32.shr_s (i32.shl (i32.load8_u (local.get $pc)) (i32.const 24)) (i32.const 16)) (i32.load8_u (i32.and (i32.add (local.get $pc) (i32.const 1)) (i32.const 0xffff)))))))) (else (local.set $pc (i32.add (local.get $pc) (i32.const 2)))))
         (br $loop)
 
         );; INC2
@@ -399,42 +399,48 @@
         );; LDZ2
         (local.set $t (i32.load8_u offset=0x10000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
-        (i32.store8 offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.and (local.tee $val (i32.load16_u (local.get $t))) (i32.const 0xff)))
-        (i32.store8 offset=0x10000 (local.get $wstp) (i32.shr_u (local.get $val) (i32.const 8)))
+        (i32.store8 offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.get $t)))
+        (i32.store8 offset=0x10000 (local.get $wstp) (i32.load8_u (i32.add (local.get $t) (i32.const 1))))
         (br $loop)
 
         );; STZ2
         (local.set $t (i32.load8_u offset=0x10000 (local.get $wstp)))
-        (local.set $n (i32.or (i32.shl (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8)) (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)))))
+        (local.set $n (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
+        (local.set $l (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff)))
-        (i32.store16 (local.get $t) (local.get $n))
+        (i32.store8 (local.get $t) (local.get $l))
+        (i32.store8 (i32.add (local.get $t) (i32.const 1)) (local.get $n))
         (br $loop)
 
         );; LDR2
         (local.set $t (i32.load8_s offset=0x10000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
-        (i32.store8 offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.and (local.tee $val (i32.load16_u (i32.add (local.get $pc) (local.get $t)))) (i32.const 0xff)))
-        (i32.store8 offset=0x10000 (local.get $wstp) (i32.shr_u (local.get $val) (i32.const 8)))
+        (i32.store8 offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.tee $mval (i32.add (local.get $pc) (local.get $t)))))
+        (i32.store8 offset=0x10000 (local.get $wstp) (i32.load8_u (i32.and (i32.add (local.get $mval) (i32.const 1)) (i32.const 0xffff))))
         (br $loop)
 
         );; STR2
         (local.set $t (i32.load8_s offset=0x10000 (local.get $wstp)))
-        (local.set $n (i32.or (i32.shl (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8)) (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)))))
+        (local.set $n (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
+        (local.set $l (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff)))
-        (i32.store16 (i32.add (local.get $pc) (local.get $t)) (local.get $n))
+        (i32.store8 (local.tee $mval (i32.and (i32.add (local.get $pc) (local.get $t)) (i32.const 0xffff))) (local.get $l))
+        (i32.store8 (i32.and (i32.add (local.get $mval) (i32.const 1)) (i32.const 0xffff)) (local.get $n))
         (br $loop)
 
         );; LDA2
         (local.set $t (i32.or (i32.load8_u offset=0x10000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
-        (i32.store8 offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.and (local.tee $val (i32.load16_u (local.get $t))) (i32.const 0xff)))
-        (i32.store8 offset=0x10000 (local.get $wstp) (i32.shr_u (local.get $val) (i32.const 8)))
+        (i32.store8 offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.get $t)))
+        (i32.store8 offset=0x10000 (local.get $wstp) (i32.load8_u (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xffff))))
         (br $loop)
 
         );; STA2
         (local.set $t (i32.or (i32.load8_u offset=0x10000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
-        (local.set $n (i32.or (i32.shl (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.const 8)) (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff)))))
+        (local.set $n (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))))
+        (local.set $l (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 4)) (i32.const 0xff)))
-        (i32.store16 (local.get $t) (local.get $n))
+        (i32.store8 (local.get $t) (local.get $l))
+        (i32.store8 (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xffff)) (local.get $n))
         (br $loop)
 
         );; DEI2
@@ -449,10 +455,10 @@
         (local.set $n (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $l (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff)))
-        (i32.store8 (i32.add (i32.const 0x10200) (local.get $t)) (local.get $l))
+        (i32.store8 offset=0x10200 (local.get $t) (local.get $l))
         (call $deo (local.get $t) (local.get $l))
-        (i32.store8 (i32.add (i32.const 0x10201) (local.get $t)) (local.get $n))
-        (call $deo (i32.add (local.get $t) (i32.const 1)) (local.get $n))
+        (i32.store8 offset=0x10200 (local.tee $t (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xff))) (local.get $n))
+        (call $deo (local.get $t) (local.get $n))
         (br $loop)
 
         );; ADD2
@@ -520,7 +526,7 @@
         (br $loop)
 
         );; JMI
-        (local.set $pc (i32.add (i32.const 2) (i32.add (local.get $pc) (i32.shr_s (i32.or (i32.shl (i32.and (local.tee $signedswap_val (i32.load16_u (local.get $pc))) (i32.const 0xff)) (i32.const 24)) (i32.shl (i32.and (local.get $signedswap_val) (i32.const 0xff00)) (i32.const 8))) (i32.const 16)))))
+        (local.set $pc (i32.add (i32.const 2) (i32.add (local.get $pc) (i32.or (i32.shr_s (i32.shl (i32.load8_u (local.get $pc)) (i32.const 24)) (i32.const 16)) (i32.load8_u (i32.and (i32.add (local.get $pc) (i32.const 1)) (i32.const 0xffff)))))))
         (br $loop)
 
         );; INCr
@@ -673,7 +679,7 @@
         (local.set $t (i32.load8_u offset=0x10100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)))
-        (i32.store8 (i32.add (i32.const 0x10200) (local.get $t)) (local.get $n))
+        (i32.store8 offset=0x10200 (local.get $t) (local.get $n))
         (call $deo (local.get $t) (local.get $n))
         (br $loop)
 
@@ -737,7 +743,7 @@
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x10100 (local.get $rstp) (i32.and (local.tee $val (local.tee $n (i32.add (local.get $pc) (i32.const 2)))) (i32.const 0xff)))
         (i32.store8 offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
-        (local.set $pc (i32.add (local.get $n) (i32.shr_s (i32.or (i32.shl (i32.and (local.tee $signedswap_val (i32.load16_u (local.get $pc))) (i32.const 0xff)) (i32.const 24)) (i32.shl (i32.and (local.get $signedswap_val) (i32.const 0xff00)) (i32.const 8))) (i32.const 16))))
+        (local.set $pc (i32.add (local.get $n) (i32.or (i32.shr_s (i32.shl (i32.load8_u (local.get $pc)) (i32.const 24)) (i32.const 16)) (i32.load8_u (i32.and (i32.add (local.get $pc) (i32.const 1)) (i32.const 0xffff))))))
         (br $loop)
 
         );; INC2r
@@ -860,42 +866,48 @@
         );; LDZ2r
         (local.set $t (i32.load8_u offset=0x10100 (local.get $rstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
-        (i32.store8 offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.and (local.tee $val (i32.load16_u (local.get $t))) (i32.const 0xff)))
-        (i32.store8 offset=0x10100 (local.get $rstp) (i32.shr_u (local.get $val) (i32.const 8)))
+        (i32.store8 offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.get $t)))
+        (i32.store8 offset=0x10100 (local.get $rstp) (i32.load8_u (i32.add (local.get $t) (i32.const 1))))
         (br $loop)
 
         );; STZ2r
         (local.set $t (i32.load8_u offset=0x10100 (local.get $rstp)))
-        (local.set $n (i32.or (i32.shl (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8)) (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)))))
+        (local.set $n (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
+        (local.set $l (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff)))
-        (i32.store16 (local.get $t) (local.get $n))
+        (i32.store8 (local.get $t) (local.get $l))
+        (i32.store8 (i32.add (local.get $t) (i32.const 1)) (local.get $n))
         (br $loop)
 
         );; LDR2r
         (local.set $t (i32.load8_s offset=0x10100 (local.get $rstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
-        (i32.store8 offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.and (local.tee $val (i32.load16_u (i32.add (local.get $pc) (local.get $t)))) (i32.const 0xff)))
-        (i32.store8 offset=0x10100 (local.get $rstp) (i32.shr_u (local.get $val) (i32.const 8)))
+        (i32.store8 offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.tee $mval (i32.add (local.get $pc) (local.get $t)))))
+        (i32.store8 offset=0x10100 (local.get $rstp) (i32.load8_u (i32.and (i32.add (local.get $mval) (i32.const 1)) (i32.const 0xffff))))
         (br $loop)
 
         );; STR2r
         (local.set $t (i32.load8_s offset=0x10100 (local.get $rstp)))
-        (local.set $n (i32.or (i32.shl (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8)) (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)))))
+        (local.set $n (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
+        (local.set $l (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff)))
-        (i32.store16 (i32.add (local.get $pc) (local.get $t)) (local.get $n))
+        (i32.store8 (local.tee $mval (i32.and (i32.add (local.get $pc) (local.get $t)) (i32.const 0xffff))) (local.get $l))
+        (i32.store8 (i32.and (i32.add (local.get $mval) (i32.const 1)) (i32.const 0xffff)) (local.get $n))
         (br $loop)
 
         );; LDA2r
         (local.set $t (i32.or (i32.load8_u offset=0x10100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
-        (i32.store8 offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.and (local.tee $val (i32.load16_u (local.get $t))) (i32.const 0xff)))
-        (i32.store8 offset=0x10100 (local.get $rstp) (i32.shr_u (local.get $val) (i32.const 8)))
+        (i32.store8 offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.get $t)))
+        (i32.store8 offset=0x10100 (local.get $rstp) (i32.load8_u (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xffff))))
         (br $loop)
 
         );; STA2r
         (local.set $t (i32.or (i32.load8_u offset=0x10100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
-        (local.set $n (i32.or (i32.shl (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.const 8)) (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff)))))
+        (local.set $n (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))))
+        (local.set $l (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 4)) (i32.const 0xff)))
-        (i32.store16 (local.get $t) (local.get $n))
+        (i32.store8 (local.get $t) (local.get $l))
+        (i32.store8 (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xffff)) (local.get $n))
         (br $loop)
 
         );; DEI2r
@@ -910,10 +922,10 @@
         (local.set $n (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $l (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff)))
-        (i32.store8 (i32.add (i32.const 0x10200) (local.get $t)) (local.get $l))
+        (i32.store8 offset=0x10200 (local.get $t) (local.get $l))
         (call $deo (local.get $t) (local.get $l))
-        (i32.store8 (i32.add (i32.const 0x10201) (local.get $t)) (local.get $n))
-        (call $deo (i32.add (local.get $t) (i32.const 1)) (local.get $n))
+        (i32.store8 offset=0x10200 (local.tee $t (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xff))) (local.get $n))
+        (call $deo (local.get $t) (local.get $n))
         (br $loop)
 
         );; ADD2r
@@ -1133,7 +1145,7 @@
         );; DEOk
         (local.set $t (i32.load8_u offset=0x10000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
-        (i32.store8 (i32.add (i32.const 0x10200) (local.get $t)) (local.get $n))
+        (i32.store8 offset=0x10200 (local.get $t) (local.get $n))
         (call $deo (local.get $t) (local.get $n))
         (br $loop)
 
@@ -1195,8 +1207,8 @@
 
         );; LIT2
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
-        (i32.store8 offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.and (local.tee $val (i32.load16_u (local.get $pc))) (i32.const 0xff)))
-        (i32.store8 offset=0x10000 (local.get $wstp) (i32.shr_u (local.get $val) (i32.const 8)))
+        (i32.store8 offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.get $pc)))
+        (i32.store8 offset=0x10000 (local.get $wstp) (i32.load8_u (i32.and (i32.add (local.get $pc) (i32.const 1)) (i32.const 0xffff))))
         (local.set $pc (i32.add (local.get $pc) (i32.const 2)))
         (br $loop)
 
@@ -1318,40 +1330,46 @@
         );; LDZ2k
         (local.set $t (i32.load8_u offset=0x10000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
-        (i32.store8 offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.and (local.tee $val (i32.load16_u (local.get $t))) (i32.const 0xff)))
-        (i32.store8 offset=0x10000 (local.get $wstp) (i32.shr_u (local.get $val) (i32.const 8)))
+        (i32.store8 offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.get $t)))
+        (i32.store8 offset=0x10000 (local.get $wstp) (i32.load8_u (i32.add (local.get $t) (i32.const 1))))
         (br $loop)
 
         );; STZ2k
         (local.set $t (i32.load8_u offset=0x10000 (local.get $wstp)))
-        (local.set $n (i32.or (i32.shl (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8)) (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)))))
-        (i32.store16 (local.get $t) (local.get $n))
+        (local.set $n (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
+        (local.set $l (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))))
+        (i32.store8 (local.get $t) (local.get $l))
+        (i32.store8 (i32.add (local.get $t) (i32.const 1)) (local.get $n))
         (br $loop)
 
         );; LDR2k
         (local.set $t (i32.load8_s offset=0x10000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
-        (i32.store8 offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.and (local.tee $val (i32.load16_u (i32.add (local.get $pc) (local.get $t)))) (i32.const 0xff)))
-        (i32.store8 offset=0x10000 (local.get $wstp) (i32.shr_u (local.get $val) (i32.const 8)))
+        (i32.store8 offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.tee $mval (i32.add (local.get $pc) (local.get $t)))))
+        (i32.store8 offset=0x10000 (local.get $wstp) (i32.load8_u (i32.and (i32.add (local.get $mval) (i32.const 1)) (i32.const 0xffff))))
         (br $loop)
 
         );; STR2k
         (local.set $t (i32.load8_s offset=0x10000 (local.get $wstp)))
-        (local.set $n (i32.or (i32.shl (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8)) (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)))))
-        (i32.store16 (i32.add (local.get $pc) (local.get $t)) (local.get $n))
+        (local.set $n (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
+        (local.set $l (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))))
+        (i32.store8 (local.tee $mval (i32.and (i32.add (local.get $pc) (local.get $t)) (i32.const 0xffff))) (local.get $l))
+        (i32.store8 (i32.and (i32.add (local.get $mval) (i32.const 1)) (i32.const 0xffff)) (local.get $n))
         (br $loop)
 
         );; LDA2k
         (local.set $t (i32.or (i32.load8_u offset=0x10000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
-        (i32.store8 offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.and (local.tee $val (i32.load16_u (local.get $t))) (i32.const 0xff)))
-        (i32.store8 offset=0x10000 (local.get $wstp) (i32.shr_u (local.get $val) (i32.const 8)))
+        (i32.store8 offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.get $t)))
+        (i32.store8 offset=0x10000 (local.get $wstp) (i32.load8_u (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xffff))))
         (br $loop)
 
         );; STA2k
         (local.set $t (i32.or (i32.load8_u offset=0x10000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
-        (local.set $n (i32.or (i32.shl (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.const 8)) (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff)))))
-        (i32.store16 (local.get $t) (local.get $n))
+        (local.set $n (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))))
+        (local.set $l (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))))
+        (i32.store8 (local.get $t) (local.get $l))
+        (i32.store8 (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xffff)) (local.get $n))
         (br $loop)
 
         );; DEI2k
@@ -1365,10 +1383,10 @@
         (local.set $t (i32.load8_u offset=0x10000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $l (i32.load8_u offset=0x10000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))))
-        (i32.store8 (i32.add (i32.const 0x10200) (local.get $t)) (local.get $l))
+        (i32.store8 offset=0x10200 (local.get $t) (local.get $l))
         (call $deo (local.get $t) (local.get $l))
-        (i32.store8 (i32.add (i32.const 0x10201) (local.get $t)) (local.get $n))
-        (call $deo (i32.add (local.get $t) (i32.const 1)) (local.get $n))
+        (i32.store8 offset=0x10200 (local.tee $t (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xff))) (local.get $n))
+        (call $deo (local.get $t) (local.get $n))
         (br $loop)
 
         );; ADD2k
@@ -1588,7 +1606,7 @@
         );; DEOkr
         (local.set $t (i32.load8_u offset=0x10100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
-        (i32.store8 (i32.add (i32.const 0x10200) (local.get $t)) (local.get $n))
+        (i32.store8 offset=0x10200 (local.get $t) (local.get $n))
         (call $deo (local.get $t) (local.get $n))
         (br $loop)
 
@@ -1650,8 +1668,8 @@
 
         );; LIT2r
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
-        (i32.store8 offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.and (local.tee $val (i32.load16_u (local.get $pc))) (i32.const 0xff)))
-        (i32.store8 offset=0x10100 (local.get $rstp) (i32.shr_u (local.get $val) (i32.const 8)))
+        (i32.store8 offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.get $pc)))
+        (i32.store8 offset=0x10100 (local.get $rstp) (i32.load8_u (i32.and (i32.add (local.get $pc) (i32.const 1)) (i32.const 0xffff))))
         (local.set $pc (i32.add (local.get $pc) (i32.const 2)))
         (br $loop)
 
@@ -1773,40 +1791,46 @@
         );; LDZ2kr
         (local.set $t (i32.load8_u offset=0x10100 (local.get $rstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
-        (i32.store8 offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.and (local.tee $val (i32.load16_u (local.get $t))) (i32.const 0xff)))
-        (i32.store8 offset=0x10100 (local.get $rstp) (i32.shr_u (local.get $val) (i32.const 8)))
+        (i32.store8 offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.get $t)))
+        (i32.store8 offset=0x10100 (local.get $rstp) (i32.load8_u (i32.add (local.get $t) (i32.const 1))))
         (br $loop)
 
         );; STZ2kr
         (local.set $t (i32.load8_u offset=0x10100 (local.get $rstp)))
-        (local.set $n (i32.or (i32.shl (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8)) (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)))))
-        (i32.store16 (local.get $t) (local.get $n))
+        (local.set $n (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
+        (local.set $l (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))))
+        (i32.store8 (local.get $t) (local.get $l))
+        (i32.store8 (i32.add (local.get $t) (i32.const 1)) (local.get $n))
         (br $loop)
 
         );; LDR2kr
         (local.set $t (i32.load8_s offset=0x10100 (local.get $rstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
-        (i32.store8 offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.and (local.tee $val (i32.load16_u (i32.add (local.get $pc) (local.get $t)))) (i32.const 0xff)))
-        (i32.store8 offset=0x10100 (local.get $rstp) (i32.shr_u (local.get $val) (i32.const 8)))
+        (i32.store8 offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.tee $mval (i32.add (local.get $pc) (local.get $t)))))
+        (i32.store8 offset=0x10100 (local.get $rstp) (i32.load8_u (i32.and (i32.add (local.get $mval) (i32.const 1)) (i32.const 0xffff))))
         (br $loop)
 
         );; STR2kr
         (local.set $t (i32.load8_s offset=0x10100 (local.get $rstp)))
-        (local.set $n (i32.or (i32.shl (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8)) (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)))))
-        (i32.store16 (i32.add (local.get $pc) (local.get $t)) (local.get $n))
+        (local.set $n (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
+        (local.set $l (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))))
+        (i32.store8 (local.tee $mval (i32.and (i32.add (local.get $pc) (local.get $t)) (i32.const 0xffff))) (local.get $l))
+        (i32.store8 (i32.and (i32.add (local.get $mval) (i32.const 1)) (i32.const 0xffff)) (local.get $n))
         (br $loop)
 
         );; LDA2kr
         (local.set $t (i32.or (i32.load8_u offset=0x10100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
-        (i32.store8 offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.and (local.tee $val (i32.load16_u (local.get $t))) (i32.const 0xff)))
-        (i32.store8 offset=0x10100 (local.get $rstp) (i32.shr_u (local.get $val) (i32.const 8)))
+        (i32.store8 offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.get $t)))
+        (i32.store8 offset=0x10100 (local.get $rstp) (i32.load8_u (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xffff))))
         (br $loop)
 
         );; STA2kr
         (local.set $t (i32.or (i32.load8_u offset=0x10100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
-        (local.set $n (i32.or (i32.shl (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.const 8)) (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff)))))
-        (i32.store16 (local.get $t) (local.get $n))
+        (local.set $n (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))))
+        (local.set $l (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))))
+        (i32.store8 (local.get $t) (local.get $l))
+        (i32.store8 (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xffff)) (local.get $n))
         (br $loop)
 
         );; DEI2kr
@@ -1820,10 +1844,10 @@
         (local.set $t (i32.load8_u offset=0x10100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $l (i32.load8_u offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))))
-        (i32.store8 (i32.add (i32.const 0x10200) (local.get $t)) (local.get $l))
+        (i32.store8 offset=0x10200 (local.get $t) (local.get $l))
         (call $deo (local.get $t) (local.get $l))
-        (i32.store8 (i32.add (i32.const 0x10201) (local.get $t)) (local.get $n))
-        (call $deo (i32.add (local.get $t) (i32.const 1)) (local.get $n))
+        (i32.store8 offset=0x10200 (local.tee $t (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xff))) (local.get $n))
+        (call $deo (local.get $t) (local.get $n))
         (br $loop)
 
         );; ADD2kr
