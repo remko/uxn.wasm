@@ -300,7 +300,7 @@ function loadTests() {
           deo(port, value);
         },
         dei(port) {
-          throw new Error("not implemented");
+          return uxn.dev[port];
         },
       });
     });
@@ -454,12 +454,12 @@ function loadTests() {
           expect(wst()).to.eql([0xab, 0xcd]);
         });
 
-        it("should not wrap around zero page", () => {
+        it("should wrap around zero page", () => {
           uxn.load([LIT, 0xff, LDZ2]);
           uxn.ram[0xff] = 0xab;
           uxn.ram[0x00] = 0xcd;
           uxn.eval(PROGRAM_OFFSET);
-          expect(wst()).to.eql([0xab, 0x80]);
+          expect(wst()).to.eql([0xab, 0xcd]);
         });
       });
 

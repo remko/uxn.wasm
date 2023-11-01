@@ -429,8 +429,6 @@ const instructions = [
   ],
   [
     "LDZ2",
-    // Used to be (#T2^! (i32.load16_u (local.get $t))).
-    // Since LDZ2 does not wrap, this was ok, but performance is the same (and this is more consistent with LDZ)
     `
 (local.set $t (#T))
 (#set 1 1)
@@ -439,8 +437,6 @@ const instructions = [
   ],
   [
     "STZ2",
-    // Used to be (i32.store16 (local.get $t) (local.get $n))
-    // Since STZ2 does not wrap, this was ok, but peformance is actually worse.
     `
 (local.set $t (#T))
 (local.set $n (#N))
@@ -877,7 +873,7 @@ function generate() {
       // zero-page (not wrapping)
       [
         "poke2z",
-        `(i32.store8 #1 #2) (i32.store8 (i32.add #1 (i32.const 1)) #3)`,
+        `(i32.store8 #1 #2) (i32.store8 (i32.and (i32.add #1 (i32.const 1)) (i32.const 0xff)) #3)`,
       ],
     ];
     for (const [regname, regidx] of [
@@ -912,7 +908,7 @@ function generate() {
               reg + "2<zmem!",
               `(i32.store8 offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${
                 regidx + 1
-              })) (i32.const 0xff)) (i32.load8_u #1)) (i32.store8 offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${regidx})) (i32.const 0xff)) (i32.load8_u (i32.add #1 (i32.const 1))))`,
+              })) (i32.const 0xff)) (i32.load8_u #1)) (i32.store8 offset=${offset} (i32.and (i32.add (local.get $${stack}p) (i32.const ${regidx})) (i32.const 0xff)) (i32.load8_u (i32.and (i32.add #1 (i32.const 1)) (i32.const 0xff))))`,
             ],
             [
               // Copy from memory (with expression)

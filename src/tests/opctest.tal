@@ -80,15 +80,19 @@
 	AND ;Dict/ram-wrap test-part
 
 	( Part 9
-		> Testing that zero-page is not wrapping )
+		> Testing that zero-page is wrapping )
 
 	#1234 #ff STZ2
-	#ff LDZ #0100 LDA ADD #46 EQU
+	#00ff LDA #0000 LDA ADD #46 EQU
 	;Dict/zp-wrap test-part
 
-	( Part 10 
-		> Testing that device page is wrapping 
-		> TODO )
+	( Part 10
+		> Testing that device page is wrapping )
+
+	#1234 #ff DEO2
+	#ff DEI #00 DEI ADD #46 EQU
+	;Dict/dev-wrap test-part
+	#0000 DEO #00ff DEO
 
 	( end )
 
@@ -105,7 +109,7 @@ BRK
 	( name ) "Opctest 0a
 	( details ) "A 20 "Testing 20 "Program 0a
 	( author ) "By 20 "Devine 20 "Lu 20 "Linvega 0a
-	( date ) "31 20 "Oct 20 "2023 $2
+	( date ) "1 20 "Nov 20 "2023 $2
 
 @test-part ( f name* -- )
 	pstr ?{
@@ -277,12 +281,12 @@ JMP2r
 	&g #8000 #0200 MUL2 [ #0000 ] EQU2 JMP2r
 	&h #2222 #0003 MUL2 [ #6666 ] EQU2 JMP2r
 @op-div ;Dict/div !set
-	&a #10 #02 DIV [ #08 ] EQU JMP2r
+	&a #10 #06 DIV [ #02 ] EQU JMP2r
 	&b #20 #20 DIV [ #01 ] EQU JMP2r
 	&c #34 #01 DIV [ #34 ] EQU JMP2r
 	&d #02 #ef DIV [ #00 ] EQU JMP2r
 	&e #02 #00 DIV [ #00 ] EQU JMP2r
-	&f #1000 #0040 DIV2 [ #0040 ] EQU2 JMP2r
+	&f #03e8 #0006 DIV2 [ #00a6 ] EQU2 JMP2r
 	&g #abcd #1234 DIV2 [ #0009 ] EQU2 JMP2r
 	&h #8000 #0200 DIV2 [ #0040 ] EQU2 JMP2r
 	&i #2222 #0003 DIV2 [ #0b60 ] EQU2 JMP2r
@@ -420,6 +424,7 @@ JMP2r
 	&stack-wrap "Stack-wrap $1
 	&ram-wrap "RAM-wrap $1
 	&zp-wrap "Zeropage-wrap $1
+	&dev-wrap "Devices-wrap $1
 	&result "Result: $1
 	&passed 20 "passed! 0a $1
 	&missed "Opcode 20 "Failed 20 "-- 20 $1
