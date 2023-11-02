@@ -3,3 +3,4 @@
 /dist
 /public/uxn-wasm
 /*.wasm
+.DS_Store

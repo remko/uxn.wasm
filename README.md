@@ -10,6 +10,18 @@ The [WebAssembly
 module](https://github.com/remko/uxn.wasm/blob/master/src/uxn.wat) is generated
 by [a script](https://github.com/remko/uxn.wasm/blob/master/scripts/emuwasm.js) that generates WebAssembly for the various instruction variants, based on hand-written raw WebAssembly for the base instructions, and does some small local optimizations on the generated code.
 
+Goals of this implementation (in descending order of priority) are:
+
+- **Compliance**: Follows the Uxn specification to the letter. This includes
+  support for circular stacks and memory, which comes at the cost of speed (and
+  simplicity). Compliance is [tested](https://github.com/remko/uxn.wasm/actions/workflows/upstream-tests.yml) against the [Uxn opcode test suite](https://git.sr.ht/~rabbits/uxn-utils/tree/main/item/cli/opctest).
+- **Simplicity**: The implementation needs to be understandable and maintainable.
+  When speed optimizations would come at the cost of too much complexity, I
+  don’t do them.
+- **Speed**: Try to be as fast as possible. If implementation of instructions are
+  changed, check the impact on performance of the benchmarks (and
+  microbenchmarks) to understand the impact on speed.
+
 ## Installation
 
 Uxn.wasm is part of the uxn5 distribution.
