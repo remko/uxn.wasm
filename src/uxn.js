@@ -22,10 +22,10 @@ export function Uxn() {
         },
       })
     ).instance.exports;
-    this.ram = new Uint8Array(core.memory.buffer, 0, 0x10300);
-    this.dev = new Uint8Array(core.memory.buffer, 0x10200, 0x100);
+    this.ram = new Uint8Array(core.memory.buffer, 0, 0x10000);
     wst = new Uint8Array(core.memory.buffer, 0x10000, 0x100);
     rst = new Uint8Array(core.memory.buffer, 0x10100, 0x100);
+    this.dev = new Uint8Array(core.memory.buffer, 0x10200, 0x100);
   };
 
   this.load = (rom) => {
