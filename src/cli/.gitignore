@@ -3,6 +3,7 @@
 *.sym
 *.profraw
 *.profdata
+*.log
 /coverage
-/uxnwasm
-uxnwasm_core.*
+/uxn-wasm-cli
+cli_core.*

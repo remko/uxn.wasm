@@ -8,6 +8,9 @@ jobs:
   build:
     uses: ./.github/workflows/build.yml
 
+  build-cli:
+    uses: ./.github/workflows/build-cli.yml
+
   publish:
     needs: build
     runs-on: ubuntu-latest
@@ -29,3 +32,23 @@ jobs:
           RELEASE_ASSETS_UPLOAD_URL: https://uploads.github.com/repos/${{ github.event.repository.full_name}}/releases/${{ github.event.release.id }}/assets
         shell: bash
 
+  publish-cli:
+    needs: build-cli
+    runs-on: [macos-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/setup
+      - run: make -C src/cli package
+      - name: "Upload artifacts"
+        run: |
+          for f in `find dist -name 'uxn-wasm-cli.*'`; do
+            curl --fail \
+              -H "Authorization: token $GITHUB_TOKEN" \
+              -H "Content-Type: $(file -b --mime-type $f)" \
+              --data-binary @$f \
+              "$RELEASE_ASSETS_UPLOAD_URL?name=$(basename $f)"
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_ASSETS_UPLOAD_URL: https://uploads.github.com/repos/${{ github.event.repository.full_name}}/releases/${{ github.event.release.id }}/assets
+        shell: bash

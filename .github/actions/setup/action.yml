@@ -6,15 +6,39 @@ runs:
     with:
       node-version: 17
       cache: 'yarn'
-  - run: |
-      curl -L -s https://github.com/WebAssembly/wabt/releases/download/1.0.31/wabt-1.0.31-ubuntu.tar.gz | tar xvz -C /tmp
-      sudo mv /tmp/wabt-1.0.31/bin/* /usr/local/bin
-      sudo mv /tmp/wabt-1.0.31/include/* /usr/local/include
-      sudo mv /tmp/wabt-1.0.31/lib/*.a /usr/local/lib
-      sudo mv /tmp/wabt-1.0.31/share/wabt /usr/local/share
+  - if: runner.os == 'Linux'
+    run: |
+      curl -L -s https://github.com/WebAssembly/wabt/releases/download/1.0.33/wabt-1.0.33-ubuntu.tar.gz | tar xvz -C /tmp
+      sudo mv /tmp/wabt-1.0.33/bin/* /usr/local/bin
+      sudo mv /tmp/wabt-1.0.33/include/* /usr/local/include
+      sudo mv /tmp/wabt-1.0.33/lib/*.a /usr/local/lib
+      sudo mv /tmp/wabt-1.0.33/share/wabt /usr/local/share
+      echo "WABT_INCLUDE_DIR=/usr/local/include" >> $GITHUB_ENV
+      echo "WABT_LIB_DIR=/usr/local/lib" >> $GITHUB_ENV
+      echo "WABT_DATA_DIR=/usr/local/share/wabt" >> $GITHUB_ENV
     shell: bash
-  - run: |
+  - if: runner.os == 'macOS'
+    run: |
+      curl -L -s https://github.com/WebAssembly/wabt/releases/download/1.0.33/wabt-1.0.33-macos-12.tar.gz | tar xvz -C /tmp
+      sudo mv /tmp/wabt-1.0.33/bin/* /usr/local/bin
+      sudo mv /tmp/wabt-1.0.33/include/* /usr/local/include
+      sudo mv /tmp/wabt-1.0.33/lib/*.a /usr/local/lib
+      sudo mv /tmp/wabt-1.0.33/share/wabt /usr/local/share
+    shell: bash
+  - if: runner.os == 'Windows'
+    run: |
+      curl -L -s https://github.com/WebAssembly/wabt/releases/download/1.0.33/wabt-1.0.33-windows.tar.gz | tar xvz -C /tmp
+      mv /tmp/wabt-1.0.33 /c/tools/wabt
+      cp /c/tools/wabt/bin/* /c/Windows/system32
+    shell: bash
+  - if: runner.os == 'Linux'
+    run: |
       curl -L -s https://rabbits.srht.site/uxn/uxn-essentials-lin64.tar.gz | tar xvz 
+      echo "$GITHUB_WORKSPACE/uxn" >> $GITHUB_PATH
+    shell: bash
+  - if: runner.os == 'macOS'
+    run: |
+      curl -L -s https://rabbits.srht.site/uxn/uxn-essentials-mac64.tar.gz | tar xvz 
       echo "$GITHUB_WORKSPACE/uxn" >> $GITHUB_PATH
     shell: bash
   - run: yarnpkg --pure-lockfile
