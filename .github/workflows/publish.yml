@@ -5,19 +5,12 @@ on:
     types: [created]
 
 jobs:
-  build:
-    uses: ./.github/workflows/build.yml
-
-  build-cli:
-    uses: ./.github/workflows/build-cli.yml
-
   publish:
-    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/setup
-      - run: make
+      - run: make all lint test
       - name: "Upload artifacts"
         run: |
           for f in `find dist -name 'uxn-wasm.*'`; do
@@ -33,15 +26,17 @@ jobs:
         shell: bash
 
   publish-cli:
-    needs: build-cli
-    runs-on: [macos-latest, ubuntu-latest]
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/setup
-      - run: make -C src/cli package
+      - run: make -C src/cli package test
       - name: "Upload artifacts"
         run: |
-          for f in `find dist -name 'uxn-wasm-cli.*'`; do
+          for f in `find dist -name 'uxn-wasm-cli-*'`; do
             curl --fail \
               -H "Authorization: token $GITHUB_TOKEN" \
               -H "Content-Type: $(file -b --mime-type $f)" \
