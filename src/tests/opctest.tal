@@ -216,7 +216,7 @@ JMP2r
 =op-jmi [
 	=op-jmi/a ]
 =op-jsi [
-	=op-jsi/a =op-jsi/b ]
+	=op-jsi/a =op-jsi/b =op-jsi/c =op-jsi/d ]
 	&end
 
 @op-equ ;Dict/equ !set
@@ -406,6 +406,8 @@ JMP2r
 @op-jsi ;Dict/jsi !set
 	&a #02 #04 routine #06 EQU JMP2r
 	&b ;&return special &return JMP2r
+	&c ,&skip-c JMP &routine-c ADD JMP2r &skip-c #02 #04 op-jsi/routine-c #06 EQU JMP2r
+	&d ,&skip-d JMP &routine-d ADD JMP2r &skip-d #02 #04 op-jsi-far-routine-d #06 EQU JMP2r
 
 @special ( routine* -- f )
 
@@ -441,3 +443,4 @@ JMP2r
 	&jmi "JMI $1 &jci "JCI $1 &jsi "JSI $1
 ]
 
+|f000 @op-jsi-far-routine-d op-jsi/routine-d JMP2r
