@@ -288,7 +288,7 @@ const instructions = [
     `
 (local.set $t (#T))
 (#set 0 -1)
-(if (local.get $t) (then (local.set $pc (i32.add (i32.const 2) (i32.add (local.get $pc) (#peek16s (local.get $pc)))))) (else (local.set $pc (i32.add (local.get $pc) (i32.const 2)))))
+(if (local.get $t) (then (local.set $pc (i32.add (i32.const 2) (i32.and (i32.add (local.get $pc) (#peek16 (local.get $pc))) (i32.const 0xffff))))) (else (local.set $pc (i32.add (local.get $pc) (i32.const 2)))))
 `,
   ],
   [
@@ -578,7 +578,7 @@ const instructions = [
   [
     "JMI",
     `
-(local.set $pc (i32.add (i32.const 2) (i32.add (local.get $pc) (#peek16s (local.get $pc)))))
+(local.set $pc (i32.add (i32.const 2) (i32.and (i32.add (local.get $pc) (#peek16 (local.get $pc))) (i32.const 0xffff))))
 `,
   ],
   ["INCr", null],
@@ -617,7 +617,7 @@ const instructions = [
     `
 (#set 0 2)
 (#T2! (local.tee $n (i32.add (local.get $pc) (i32.const 2))))
-(local.set $pc (i32.add (local.get $n) (#peek16s (local.get $pc))))
+(local.set $pc (i32.and (i32.add (local.get $n) (#peek16 (local.get $pc))) (i32.const 0xffff)))
 `,
   ],
   ["INC2r", null],
@@ -858,8 +858,8 @@ function generate() {
 
     const macros = [
       [
-        "peek16s",
-        `(i32.or (i32.shr_s (i32.shl (i32.load8_u #1) (i32.const 24)) (i32.const 16)) (i32.load8_u (i32.and (i32.add #1 (i32.const 1)) (i32.const 0xffff))))`,
+        "peek16",
+        `(i32.or (i32.shl (i32.load8_u #1) (i32.const 8)) (i32.load8_u (i32.and (i32.add #1 (i32.const 1)) (i32.const 0xffff))))`,
       ],
       [
         "poke2",

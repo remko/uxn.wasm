@@ -276,7 +276,7 @@
         );; JCI
         (local.set $t (i32.load8_u offset=0x10000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)))
-        (if (local.get $t) (then (local.set $pc (i32.add (i32.const 2) (i32.add (local.get $pc) (i32.or (i32.shr_s (i32.shl (i32.load8_u (local.get $pc)) (i32.const 24)) (i32.const 16)) (i32.load8_u (i32.and (i32.add (local.get $pc) (i32.const 1)) (i32.const 0xffff)))))))) (else (local.set $pc (i32.add (local.get $pc) (i32.const 2)))))
+        (if (local.get $t) (then (local.set $pc (i32.add (i32.const 2) (i32.and (i32.add (local.get $pc) (i32.or (i32.shl (i32.load8_u (local.get $pc)) (i32.const 8)) (i32.load8_u (i32.and (i32.add (local.get $pc) (i32.const 1)) (i32.const 0xffff))))) (i32.const 0xffff))))) (else (local.set $pc (i32.add (local.get $pc) (i32.const 2)))))
         (br $loop)
 
         );; INC2
@@ -526,7 +526,7 @@
         (br $loop)
 
         );; JMI
-        (local.set $pc (i32.add (i32.const 2) (i32.add (local.get $pc) (i32.or (i32.shr_s (i32.shl (i32.load8_u (local.get $pc)) (i32.const 24)) (i32.const 16)) (i32.load8_u (i32.and (i32.add (local.get $pc) (i32.const 1)) (i32.const 0xffff)))))))
+        (local.set $pc (i32.add (i32.const 2) (i32.and (i32.add (local.get $pc) (i32.or (i32.shl (i32.load8_u (local.get $pc)) (i32.const 8)) (i32.load8_u (i32.and (i32.add (local.get $pc) (i32.const 1)) (i32.const 0xffff))))) (i32.const 0xffff))))
         (br $loop)
 
         );; INCr
@@ -743,7 +743,7 @@
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x10100 (local.get $rstp) (i32.and (local.tee $val (local.tee $n (i32.add (local.get $pc) (i32.const 2)))) (i32.const 0xff)))
         (i32.store8 offset=0x10100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
-        (local.set $pc (i32.add (local.get $n) (i32.or (i32.shr_s (i32.shl (i32.load8_u (local.get $pc)) (i32.const 24)) (i32.const 16)) (i32.load8_u (i32.and (i32.add (local.get $pc) (i32.const 1)) (i32.const 0xffff))))))
+        (local.set $pc (i32.and (i32.add (local.get $n) (i32.or (i32.shl (i32.load8_u (local.get $pc)) (i32.const 8)) (i32.load8_u (i32.and (i32.add (local.get $pc) (i32.const 1)) (i32.const 0xffff))))) (i32.const 0xffff)))
         (br $loop)
 
         );; INC2r
