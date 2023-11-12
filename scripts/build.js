@@ -5,10 +5,12 @@ const esbuild = require("esbuild");
 const path = require("path");
 const fs = require("fs");
 const { createServer } = require("http");
-const { wasmTextPlugin } = require("./scripts/esbuild/wasm-text");
-const { uxntalPlugin } = require("./scripts/esbuild/uxntal");
+const { wasmTextPlugin } = require("./esbuild/wasm-text");
+const { uxntalPlugin } = require("./esbuild/uxntal");
 
-const version = JSON.parse(fs.readFileSync("package.json")).version;
+const version = JSON.parse(
+  fs.readFileSync(path.join(__dirname, "..", "package.json"))
+).version;
 
 let dev = false;
 let watch = false;
@@ -42,8 +44,16 @@ const INDEX_TEMPLATE = `<!doctype html>
 
 async function handleBuildFinished(result) {
   const indexes = [
-    ["Uxn.wasm Tests", "tests", "public/uxn-wasm/tests"],
-    ["Uxn.wasm Benchmarks", "benchmarks", "public/uxn-wasm/benchmarks"],
+    [
+      "Uxn.wasm Tests",
+      "tests",
+      path.join(__dirname, "../public/uxn-wasm/tests"),
+    ],
+    [
+      "Uxn.wasm Benchmarks",
+      "benchmarks",
+      path.join(__dirname, "../public/uxn-wasm/benchmarks"),
+    ],
   ];
   for (const [title, base, outpath] of indexes) {
     let index = INDEX_TEMPLATE.replace(/\$BASE/g, base).replace(
@@ -64,7 +74,7 @@ async function handleBuildFinished(result) {
 const buildOptions = {
   bundle: true,
   logLevel: "info",
-  entryPoints: [path.join(__dirname, "src", "web", "waforth")],
+  entryPoints: [path.join(__dirname, "..", "src", "web", "waforth")],
   minify: !dev,
   format: "iife",
   loader: {
@@ -77,8 +87,8 @@ const buildOptions = {
 
 const packageBuildOptions = {
   ...buildOptions,
-  entryPoints: [path.join(__dirname, "src", "uxn")],
-  outfile: path.join(__dirname, "dist", "uxn-wasm.js"),
+  entryPoints: [path.join(__dirname, "..", "src", "uxn")],
+  outfile: path.join(__dirname, "..", "dist", "uxn-wasm.js"),
   banner: {
     js: `// Uxn.wasm v${version}\n// https://github.com/remko/uxn.wasm`,
   },
@@ -89,12 +99,12 @@ const packageBuildOptions = {
 let webBuildOptions = {
   ...buildOptions,
   entryPoints: [
-    path.join(__dirname, "src", "tests", "tests"),
-    path.join(__dirname, "src", "benchmarks", "benchmarks"),
+    path.join(__dirname, "..", "src", "tests", "tests"),
+    path.join(__dirname, "..", "src", "benchmarks", "benchmarks"),
   ],
   entryNames: dev ? "[name]" : "[name]-c$[hash]",
   assetNames: "[name]-c$[hash]",
-  outdir: path.join(__dirname, "public/uxn-wasm/dist"),
+  outdir: path.join(__dirname, "../public/uxn-wasm/dist"),
   publicPath: "/uxn-wasm/dist",
   external: ["fs", "stream", "util", "events", "path"],
   metafile: true,
@@ -118,7 +128,7 @@ if (watch) {
     // Simple static file server
     createServer(async function (req, res) {
       const url = req.url.replace(/\?.*/g, "");
-      let f = path.join(__dirname, "public", url);
+      let f = path.join(__dirname, "..", "public", url);
       try {
         if ((await fs.promises.lstat(f)).isDirectory()) {
           f = path.join(f, "index.html");

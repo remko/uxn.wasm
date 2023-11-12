@@ -1,7 +1,10 @@
 {
   "name": "uxn.wasm",
+  "description": "WebAssembly implementation of the Uxn virtual machine",
+  "repository": "github:remko/uxn.wasm",
   "version": "0.7.0",
-  "main": "index.js",
+  "type": "module",
+  "main": "src/uxn.js",
   "author": "Remko Tronçon <remko@el-tramo.be>",
   "license": "MIT",
   "devDependencies": {

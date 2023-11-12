@@ -3,8 +3,8 @@
 
 const esbuild = require("esbuild");
 const path = require("path");
-const { wasmTextPlugin } = require("./scripts/esbuild/wasm-text");
-const { uxntalPlugin } = require("./scripts/esbuild/uxntal");
+const { wasmTextPlugin } = require("./esbuild/wasm-text");
+const { uxntalPlugin } = require("./esbuild/uxntal");
 const Mocha = require("mocha");
 
 let watch = false;
@@ -22,8 +22,8 @@ for (const arg of process.argv.slice(2)) {
 
 function runTests() {
   const mocha = new Mocha();
-  delete require.cache[path.join(__dirname, "build", "tests.js")];
-  mocha.addFile("build/tests.js");
+  delete require.cache[path.join(__dirname, "..", "build", "tests.js")];
+  mocha.addFile(path.join(__dirname, "..", "build/tests.js"));
   mocha.run((failures) => (process.exitCode = failures ? 1 : 0));
 }
 
@@ -31,7 +31,7 @@ const buildOptions = {
   bundle: true,
   logLevel: "warning",
   target: "node17",
-  outdir: path.join(__dirname, "build"),
+  outdir: path.join(__dirname, "..", "build"),
   external: ["fs", "stream", "util", "events", "path"],
   minify: false,
   loader: {
@@ -44,7 +44,7 @@ const buildOptions = {
 
 const testBuildOptions = {
   ...buildOptions,
-  entryPoints: [path.join(__dirname, "src", "tests", "tests.node")],
+  entryPoints: [path.join(__dirname, "..", "src", "tests", "tests.node")],
   plugins: buildOptions.plugins.concat([
     {
       name: "runTests",
@@ -62,7 +62,9 @@ const testBuildOptions = {
 
 const benchmarkBuildOptions = {
   ...buildOptions,
-  entryPoints: [path.join(__dirname, "src", "benchmarks", "benchmarks.node")],
+  entryPoints: [
+    path.join(__dirname, "..", "src", "benchmarks", "benchmarks.node"),
+  ],
   plugins: buildOptions.plugins.concat([
     {
       name: "runBenchmarks",
@@ -71,8 +73,10 @@ const benchmarkBuildOptions = {
           if (result.errors.length > 0) {
             return;
           }
-          delete require.cache[path.join(__dirname, "build", "benchmarks.js")];
-          require("./build/benchmarks.js");
+          delete require.cache[
+            path.join(__dirname, "..", "build", "benchmarks.cjs")
+          ];
+          require("../build/benchmarks.cjs");
         });
       },
     },

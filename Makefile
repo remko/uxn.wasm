@@ -11,21 +11,21 @@ all: build
 
 .PHONY: build
 build: build/uxn.wasm
-	./build.js $(BUILD_FLAGS)
+	./scripts/build.js $(BUILD_FLAGS)
 
 dev:
-	./build.js $(BUILD_FLAGS) --watch
+	./scripts/build.js $(BUILD_FLAGS) --watch
 
 .PHONY: test
 test:
-	./test.js
+	./scripts/test.js
 
 test-dev:
-	./test.js --watch
+	./scripts/test.js --watch
 
 .PHONY: bench
 bench:
-	./test.js --benchmarks
+	./scripts/test.js --benchmarks
 
 bench-native: build/mandelbrot.rom build/primes32.rom
 	@echo mandelbrot
