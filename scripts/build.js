@@ -1,12 +1,15 @@
 #!/usr/bin/env node
-/* eslint-env node */
 
-const esbuild = require("esbuild");
-const path = require("path");
-const fs = require("fs");
-const { createServer } = require("http");
-const { wasmTextPlugin } = require("./esbuild/wasm-text");
-const { uxntalPlugin } = require("./esbuild/uxntal");
+import * as esbuild from "esbuild";
+import * as path from "path";
+import * as fs from "fs";
+import * as process from "process";
+import { createServer } from "http";
+import { wasmTextPlugin } from "./esbuild/wasm-text.cjs";
+import { uxntalPlugin } from "./esbuild/uxntal.cjs";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const version = JSON.parse(
   fs.readFileSync(path.join(__dirname, "..", "package.json"))

@@ -14,5 +14,30 @@
     "eslint-plugin-prettier": "^4.0.0",
     "mocha": "^9.2.2",
     "prettier": "^2.6.2"
+  },
+  "eslintConfig": {
+    "env": {
+      "browser": true,
+      "es2021": true
+    },
+    "extends": [
+      "eslint:recommended"
+    ],
+    "parserOptions": {
+      "ecmaVersion": 12,
+      "sourceType": "module"
+    },
+    "plugins": [
+      "prettier"
+    ],
+    "rules": {
+      "prettier/prettier": "error"
+    },
+    "ignorePatterns": [
+      "public/uxn-wasm/dist",
+      "build/",
+      "dist/",
+      "src/benchmarks/uxn5.js"
+    ]
   }
 }

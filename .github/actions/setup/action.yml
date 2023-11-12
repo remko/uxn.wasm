@@ -5,7 +5,7 @@ runs:
   - uses: actions/setup-node@v3
     with:
       node-version: 17
-      cache: 'yarn'
+      cache: 'npm'
   - if: runner.os == 'Linux'
     run: |
       curl -L -s https://github.com/WebAssembly/wabt/releases/download/1.0.33/wabt-1.0.33-ubuntu.tar.gz | tar xvz -C /tmp
@@ -41,5 +41,5 @@ runs:
       curl -L -s https://rabbits.srht.site/uxn/uxn-essentials-mac64.tar.gz | tar xvz 
       echo "$GITHUB_WORKSPACE/uxn" >> $GITHUB_PATH
     shell: bash
-  - run: yarnpkg --pure-lockfile
+  - run: npm ci
     shell: bash

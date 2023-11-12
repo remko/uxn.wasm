@@ -18,14 +18,14 @@ dev:
 
 .PHONY: test
 test:
-	./scripts/test.js
+	./scripts/test.cjs
 
 test-dev:
-	./scripts/test.js --watch
+	./scripts/test.cjs --watch
 
 .PHONY: bench
 bench:
-	./scripts/test.js --benchmarks
+	./scripts/test.cjs --benchmarks
 
 bench-native: build/mandelbrot.rom build/primes32.rom
 	@echo mandelbrot

@@ -1,3 +1,5 @@
+/* eslint-env node */
+
 const suite = require("./suite").default;
 const Uxn = require("../uxn").Uxn;
 

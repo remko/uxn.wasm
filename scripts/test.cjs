@@ -3,8 +3,8 @@
 
 const esbuild = require("esbuild");
 const path = require("path");
-const { wasmTextPlugin } = require("./esbuild/wasm-text");
-const { uxntalPlugin } = require("./esbuild/uxntal");
+const { wasmTextPlugin } = require("./esbuild/wasm-text.cjs");
+const { uxntalPlugin } = require("./esbuild/uxntal.cjs");
 const Mocha = require("mocha");
 
 let watch = false;
@@ -22,8 +22,8 @@ for (const arg of process.argv.slice(2)) {
 
 function runTests() {
   const mocha = new Mocha();
-  delete require.cache[path.join(__dirname, "..", "build", "tests.js")];
-  mocha.addFile(path.join(__dirname, "..", "build/tests.js"));
+  delete require.cache[path.join(__dirname, "..", "build", "tests.cjs")];
+  mocha.addFile(path.join(__dirname, "..", "build/tests.cjs"));
   mocha.run((failures) => (process.exitCode = failures ? 1 : 0));
 }
 
@@ -32,6 +32,7 @@ const buildOptions = {
   logLevel: "warning",
   target: "node17",
   outdir: path.join(__dirname, "..", "build"),
+  outExtension: { ".js": ".cjs" },
   external: ["fs", "stream", "util", "events", "path"],
   minify: false,
   loader: {
