@@ -1,11 +1,16 @@
 {
   "name": "uxn.wasm",
   "description": "WebAssembly implementation of the Uxn virtual machine",
-  "repository": "github:remko/uxn.wasm",
-  "version": "0.7.0",
-  "type": "module",
-  "main": "src/uxn.js",
   "author": "Remko Tronçon <remko@el-tramo.be>",
+  "version": "0.7.0",
+  "repository": "github:remko/uxn.wasm",
+  "keywords": [
+    "uxn",
+    "uxntal",
+    "webassembly",
+    "virtual-machine",
+    "emulator"
+  ],
   "license": "MIT",
   "devDependencies": {
     "chai": "^4.3.6",
@@ -14,6 +19,21 @@
     "eslint-plugin-prettier": "^4.0.0",
     "mocha": "^9.2.2",
     "prettier": "^2.6.2"
+  },
+  "type": "module",
+  "main": "dist/uxn.esm.js",
+  "exports": {
+    ".": "./dist/uxn.esm.js",
+    "./util": "./dist/util.esm.js"
+  },
+  "files": [
+    "dist/uxn.esm.js",
+    "dist/uxn.esm.js.map",
+    "dist/util.esm.js",
+    "dist/util.esm.js.map"
+  ],
+  "scripts": {
+    "prepare": "scripts/build.js"
   },
   "eslintConfig": {
     "env": {

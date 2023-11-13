@@ -57,6 +57,11 @@ async function handleBuildFinished(result) {
       "benchmarks",
       path.join(__dirname, "../public/uxn-wasm/benchmarks"),
     ],
+    [
+      "Uxn.wasm Primes Example",
+      "primes",
+      path.join(__dirname, "../public/uxn-wasm/examples/primes"),
+    ],
   ];
   for (const [title, base, outpath] of indexes) {
     let index = INDEX_TEMPLATE.replace(/\$BASE/g, base).replace(
@@ -77,7 +82,6 @@ async function handleBuildFinished(result) {
 const buildOptions = {
   bundle: true,
   logLevel: "info",
-  entryPoints: [path.join(__dirname, "..", "src", "web", "waforth")],
   minify: !dev,
   format: "iife",
   loader: {
@@ -85,18 +89,29 @@ const buildOptions = {
     ".rom": "binary",
   },
   sourcemap: true,
-  plugins: [wasmTextPlugin({ debug: true }), uxntalPlugin()],
+  plugins: [wasmTextPlugin({ debug: true }), uxntalPlugin({ uxnasm: false })],
 };
 
 const packageBuildOptions = {
   ...buildOptions,
   entryPoints: [path.join(__dirname, "..", "src", "uxn")],
   outfile: path.join(__dirname, "..", "dist", "uxn-wasm.js"),
+  format: "iife",
   banner: {
     js: `// Uxn.wasm v${version}\n// https://github.com/remko/uxn.wasm`,
   },
-  format: "iife",
   globalName: "UxnWASM",
+};
+
+const esmPackageBuildOptions = {
+  ...buildOptions,
+  entryPoints: [
+    path.join(__dirname, "..", "src", "uxn"),
+    path.join(__dirname, "..", "src", "util"),
+  ],
+  outdir: path.join(__dirname, "..", "dist"),
+  outExtension: { ".js": ".esm.js" },
+  format: "esm",
 };
 
 let webBuildOptions = {
@@ -104,6 +119,7 @@ let webBuildOptions = {
   entryPoints: [
     path.join(__dirname, "..", "src", "tests", "tests"),
     path.join(__dirname, "..", "src", "benchmarks", "benchmarks"),
+    path.join(__dirname, "..", "src", "examples", "primes"),
   ],
   entryNames: dev ? "[name]" : "[name]-c$[hash]",
   assetNames: "[name]-c$[hash]",
@@ -126,8 +142,8 @@ let webBuildOptions = {
   ]),
 };
 
-if (watch) {
-  (async () => {
+(async () => {
+  if (watch) {
     // Simple static file server
     createServer(async function (req, res) {
       const url = req.url.replace(/\?.*/g, "");
@@ -151,13 +167,17 @@ if (watch) {
 
     console.log("listening on http://localhost:8080");
 
-    const webCtx = await esbuild.context(webBuildOptions);
-    webCtx.watch();
+    const esmPackageCtx = await esbuild.context(esmPackageBuildOptions);
+    esmPackageCtx.watch();
 
     const packageCtx = await esbuild.context(packageBuildOptions);
     packageCtx.watch();
-  })();
-} else {
-  esbuild.build(packageBuildOptions);
-  esbuild.build(webBuildOptions);
-}
+
+    const webCtx = await esbuild.context(webBuildOptions);
+    webCtx.watch();
+  } else {
+    esbuild.build(packageBuildOptions);
+    await esbuild.build(esmPackageBuildOptions);
+    esbuild.build(webBuildOptions);
+  }
+})();

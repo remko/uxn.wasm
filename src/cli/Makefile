@@ -2,6 +2,8 @@
 
 VERSION?=$(shell cat ../../package.json | grep '"version"' | sed -e 's/.*:.*"\(.*\)".*/\1/')
 
+UXNASM ?= $(PWD)/scripts/uxnasm.js
+
 ifeq ($(OS),Windows_NT)
 CXX = g++
 WABT_DIR = /c/tools/wabt
@@ -70,13 +72,13 @@ wasm-rt-impl.o: $(WABT_DATA_DIR)/wasm2c/wasm-rt-impl.c
 	$(MAKE) -C ../.. build/uxn.wasm
 
 opctest.rom: ../tests/opctest.tal
-	uxnasm $< $@
+	$(UXNASM) $< $@
 
 mandelbrot.rom: ../benchmarks/mandelbrot.tal
-	uxnasm $< $@
+	$(UXNASM) $< $@
 
 primes32.rom: ../benchmarks/primes32.tal
-	cd ../benchmarks && uxnasm $(PWD)/$< $(PWD)/$@
+	cd ../benchmarks && $(UXNASM) $(PWD)/$< $(PWD)/$@
 
 test: uxn-wasm-cli opctest.rom
 	./uxn-wasm-cli opctest.rom | tee opctest.log

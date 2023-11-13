@@ -36,7 +36,7 @@ export function Uxn() {
     return this;
   };
 
-  this.eval = (addr) => {
+  this.eval = (addr = 0x100) => {
     core.eval(addr);
   };
 

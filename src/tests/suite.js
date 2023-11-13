@@ -4,6 +4,11 @@ import { Uxn } from "../uxn";
 import { expect } from "chai";
 import testsTAL from "./tests.tal";
 import opctestTAL from "./opctest.tal";
+import { asm as asm_ } from "../util/index.js";
+
+function asm(v) {
+  return Array.from(asm_(v));
+}
 
 const [
   BRK,
@@ -552,6 +557,261 @@ function loadTests() {
           uxn.eval(PROGRAM_OFFSET);
           expect(wst()).to.eql([]);
         });
+      });
+    });
+
+    ////////////////////////////////////////////////////////////////////////////////
+
+    describe("asm", () => {
+      it("should compile a byte literal", () => {
+        const result = asm(`#12 #13`);
+        expect(result).to.eql([LIT, 0x12, LIT, 0x13]);
+      });
+
+      it("should compile a short literal", () => {
+        expect(asm(`#1213`)).to.eql([LIT2, 0x12, 0x13]);
+      });
+
+      it("should compile raw ascii", () => {
+        expect(asm(`"abc😀d`)).to.eql([
+          0x61, 0x62, 0x63, 0xf0, 0x9f, 0x98, 0x80, 0x64,
+        ]);
+      });
+
+      it("should read relative padding", () => {
+        const result = asm("$10 #20");
+        expect(result).to.eql([
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          LIT,
+          0x20,
+        ]);
+      });
+
+      it("should read absolute padding", () => {
+        const result = asm("|0110 #10");
+        expect(result).to.eql([
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          LIT,
+          0x10,
+        ]);
+      });
+
+      it("should not write to low offsets", () => {
+        expect(() => asm("|0000 #10")).to.throw();
+      });
+
+      it("should support literal relative addressing", () => {
+        const result = asm(`
+      |0095 @foo $02 &bar $03 &baz
+      |0100 ,foo ,foo/bar ,foo/baz ,bam ,bam/boo
+      |0110 @bam $03 &boo
+      `);
+        expect(result).to.eql([
+          LIT,
+          0x92,
+          LIT,
+          0x92,
+          LIT,
+          0x93,
+          LIT,
+          0x07,
+          LIT,
+          0x08,
+        ]);
+      });
+
+      it("should support raw relative addressing", () => {
+        const result = asm(`
+      |0095 @foo $02 &bar $03 &baz
+      |0100 _foo _foo/bar _foo/baz _bam _bam/boo
+      |0110 @bam $03 &boo
+      `);
+        expect(result).to.eql([0x93, 0x94, 0x96, 0x0b, 0x0d]);
+      });
+
+      it("should support literal zero-page addressing", () => {
+        const result = asm(`
+|0010 @foo $02 &bar $03 &baz
+|0100 .foo .foo/bar .foo/baz .bam .bam/boo
+|2000 @bam $03 &boo`);
+        expect(result).to.eql([
+          LIT,
+          0x10,
+          LIT,
+          0x12,
+          LIT,
+          0x15,
+          LIT,
+          0x00,
+          LIT,
+          0x03,
+        ]);
+      });
+
+      it("should support raw zero-page addressing", () => {
+        const result = asm(`
+|0010 @foo $02 &bar $03 &baz
+|0100 -foo -foo/bar -foo/baz -bam -bam/boo
+|2000 @bam $03 &boo`);
+        expect(result).to.eql([0x10, 0x12, 0x15, 0x00, 0x03]);
+      });
+
+      it("should support literal absolute addressing", () => {
+        const result = asm(`
+|0010 @foo $02 &bar $03 &baz
+|0100 ;foo ;foo/bar ;foo/baz ;bam ;bam/boo
+|2000 @bam $03 &boo`);
+        expect(result).to.eql([
+          0xa0, 0x00, 0x10, 0xa0, 0x00, 0x12, 0xa0, 0x00, 0x15, 0xa0, 0x20,
+          0x00, 0xa0, 0x20, 0x03,
+        ]);
+      });
+
+      it("should support raw absolute addressing", () => {
+        const result = asm(`
+|0010 @foo $02 &bar $03 &baz
+|0100 =foo =foo/bar =foo/baz =bam =bam/boo
+|2000 @bam $03 &boo`);
+        expect(result).to.eql([
+          0x00, 0x10, 0x00, 0x12, 0x00, 0x15, 0x20, 0x00, 0x20, 0x03,
+        ]);
+      });
+
+      it("should support jmi", () => {
+        const result = asm(`
+|0100 !foo/bar
+|2000 @foo $03 &bar`);
+        expect(result).to.eql([JMI, 0x1f, 0x00]);
+      });
+
+      it("should support jci", () => {
+        const result = asm(`
+|0100 ?foo/bar
+|2000 @foo $03 &bar`);
+        expect(result).to.eql([JCI, 0x1f, 0x00]);
+      });
+
+      it("should support subroutine", () => {
+        const result = asm(`
+|0100 foo/bar
+|2000 @foo $03 &bar`);
+        expect(result).to.eql([JSI, 0x1f, 0x00]);
+      });
+
+      it("should support opcodes", () => {
+        const result = asm(`
+|0100 LIT LIT2 LITr LIT2r ADD ADD2 ADDr ADD2r ADDk ADD2k ADDkr ADD2kr
+`);
+        expect(result).to.eql([
+          LIT,
+          LIT2,
+          LITr,
+          LIT2r,
+          ADD,
+          ADD2,
+          ADDr,
+          ADD2r,
+          ADDk,
+          ADD2k,
+          ADDkr,
+          ADD2kr,
+        ]);
+      });
+
+      it("should support lambdas", () => {
+        const result = asm(`
+#12 #34 { ADD JMP2r } STH2r JSR2
+`);
+        expect(result).to.eql([
+          LIT,
+          0x12,
+          LIT,
+          0x34,
+          JSI,
+          0x00,
+          0x02,
+          ADD,
+          JMP2r,
+          STH2r,
+          JSR2,
+        ]);
+      });
+
+      it("should support conditional lambdas", () => {
+        const result = asm(`
+#12 #34 ?{ ADD JMP2r } STH2r JSR2
+`);
+        expect(result).to.eql([
+          LIT,
+          0x12,
+          LIT,
+          0x34,
+          JCI,
+          0x00,
+          0x02,
+          ADD,
+          JMP2r,
+          STH2r,
+          JSR2,
+        ]);
+      });
+
+      it("should support macros", () => {
+        const result = asm(`
+%ADDDD { ADD ADD }
+#12 #34 ADDDD #56
+`);
+        expect(result).to.eql([LIT, 0x12, LIT, 0x34, ADD, ADD, LIT, 0x56]);
+      });
+
+      it("should support numbers", () => {
+        const result = asm(`10 11 1213`);
+        expect(result).to.eql([0x10, 0x11, 0x12, 0x13]);
+      });
+
+      it("should ignore blocks", () => {
+        const result = asm("[ [ #10 ] #20");
+        expect(result).to.eql([LIT, 0x10, LIT, 0x20]);
+      });
+
+      it("should skip comments", () => {
+        const result = asm("( Foo\nBar)#10");
+        expect(result).to.eql([LIT, 0x10]);
+      });
+
+      it("should skip nested comments", () => {
+        const result = asm("( ( Foo\n)Bar)#10");
+        expect(result).to.eql([LIT, 0x10]);
       });
     });
   });

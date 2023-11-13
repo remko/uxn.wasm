@@ -31,15 +31,5 @@ runs:
       mv /tmp/wabt-1.0.33 /c/tools/wabt
       cp /c/tools/wabt/bin/* /c/Windows/system32
     shell: bash
-  - if: runner.os == 'Linux'
-    run: |
-      curl -L -s https://rabbits.srht.site/uxn/uxn-essentials-lin64.tar.gz | tar xvz 
-      echo "$GITHUB_WORKSPACE/uxn" >> $GITHUB_PATH
-    shell: bash
-  - if: runner.os == 'macOS'
-    run: |
-      curl -L -s https://rabbits.srht.site/uxn/uxn-essentials-mac64.tar.gz | tar xvz 
-      echo "$GITHUB_WORKSPACE/uxn" >> $GITHUB_PATH
-    shell: bash
   - run: npm ci
     shell: bash

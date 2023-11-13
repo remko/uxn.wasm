@@ -1,6 +1,7 @@
 WAT2WASM=wat2wasm
 ESLINT=./node_modules/.bin/eslint
 WAT2WASM_FLAGS=
+UXNASM ?= $(PWD)/scripts/uxnasm.js
 BUILD_FLAGS=
 ifeq ($(DEBUG),1)
 WAT2WASM_FLAGS:=$(WAT2WASM_FLAGS) --debug-names
@@ -39,10 +40,10 @@ bench-native: build/mandelbrot.rom build/primes32.rom
 	done
 
 build/mandelbrot.rom: src/benchmarks/mandelbrot.tal
-	uxnasm $< $@
+	$(UXNASM) $< $@
 
 build/primes32.rom: src/benchmarks/primes32.tal
-	cd src/benchmarks && uxnasm primes32.tal ../../build/primes32.rom
+	cd src/benchmarks && $(UXNASM) primes32.tal ../../build/primes32.rom
 
 build/%.wasm: src/%.wat
 	mkdir -p build

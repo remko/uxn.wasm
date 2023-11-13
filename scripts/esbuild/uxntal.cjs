@@ -3,8 +3,9 @@
 const { promisify } = require("util");
 const exec = promisify(require("child_process").exec);
 const path = require("path");
+const fs = require("fs");
 
-function uxntalPlugin() {
+function uxntalPlugin(options = {}) {
   return {
     name: "uxntal",
     setup(build) {
@@ -22,12 +23,25 @@ function uxntalPlugin() {
         };
       });
       build.onLoad({ filter: /.*/, namespace: "uxntal" }, async (args) => {
-        const r = await exec(`uxnasm ${args.path} -`, {
-          cwd: path.dirname(args.path),
-          encoding: "buffer",
-        });
+        let contents;
+        if (options.uxnasm) {
+          contents = (
+            await exec(`uxnasm ${args.path} -`, {
+              cwd: path.dirname(args.path),
+              encoding: "buffer",
+            })
+          ).stdout;
+        } else {
+          const asm = (await import("../../src/util/index.js")).asm;
+          contents = asm(fs.readFileSync(args.path).toString(), {
+            include: (f) => {
+              const fn = path.join(path.dirname(args.path), f);
+              return fs.readFileSync(fn).toString();
+            },
+          });
+        }
         return {
-          contents: r.stdout,
+          contents,
           loader: "binary",
         };
       });

@@ -40,7 +40,7 @@ const buildOptions = {
     ".rom": "binary",
   },
   sourcemap: true,
-  plugins: [wasmTextPlugin({ debug: true }), uxntalPlugin()],
+  plugins: [wasmTextPlugin({ debug: true }), uxntalPlugin({ uxnasm: false })],
 };
 
 const testBuildOptions = {
