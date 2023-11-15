@@ -25,6 +25,18 @@ jobs:
           RELEASE_ASSETS_UPLOAD_URL: https://uploads.github.com/repos/${{ github.event.repository.full_name}}/releases/${{ github.event.release.id }}/assets
         shell: bash
 
+  publish-npm:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/setup
+      - run: make all lint test
+      - run: npm publish
+        env:
+          NPM_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+        shell: bash
+
   publish-cli:
     strategy:
       matrix:
@@ -47,3 +59,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_ASSETS_UPLOAD_URL: https://uploads.github.com/repos/${{ github.event.repository.full_name}}/releases/${{ github.event.release.id }}/assets
         shell: bash
+
