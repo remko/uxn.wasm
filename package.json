@@ -2,7 +2,7 @@
   "name": "uxn.wasm",
   "description": "WebAssembly implementation of the Uxn virtual machine",
   "author": "Remko Tronçon <remko@el-tramo.be>",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "repository": "github:remko/uxn.wasm",
   "keywords": [
     "uxn",
