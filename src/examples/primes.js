@@ -1,21 +1,9 @@
 import { Uxn } from "uxn.wasm";
-import { asm, withLineBuffer } from "uxn.wasm/util";
+import { asm, mux, LogConsole } from "uxn.wasm/util";
 
 (async () => {
-  const out = withLineBuffer(console.log);
-
   const uxn = new Uxn();
-  await uxn.init({
-    deo(port, val) {
-      switch (port) {
-        case 0x18:
-          out(val);
-          break;
-        default:
-          console.log(port, val);
-      }
-    },
-  });
+  await uxn.init(mux(uxn, { 0x10: new LogConsole() }));
   uxn.load(
     asm(`
 ( Source: https://git.sr.ht/~rabbits/uxn/tree/main/item/projects/examples/exercises )
@@ -28,6 +16,7 @@ import { asm, withLineBuffer } from "uxn.wasm/util";
       &skip
     INC2 NEQ2k ?&loop
   POP2 POP2
+  #0a18 DEO
   ( halt ) #010f DEO
 BRK
 
@@ -49,5 +38,4 @@ JMP2r
 `)
   );
   uxn.eval();
-  out.flush();
 })();

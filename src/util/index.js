@@ -11,13 +11,32 @@ export function poke16(mem, addr, val) {
   mem[addr + 1] = val;
 }
 
+export function mux(uxn, devices) {
+  return {
+    deo(port, val) {
+      const dev = devices[port & 0xf0];
+      if (dev && dev.deo != null) {
+        dev.deo(port & 0xf, val);
+      }
+    },
+
+    dei(port) {
+      const dev = devices[port & 0xf0];
+      if (dev && dev.dei != null) {
+        return dev.dei(port & 0xf);
+      }
+      return uxn.dev[port];
+    },
+  };
+}
+
 /**
  * Creates a function that accepts character codes in UTF-8 encoding, and calls
  * the callback whenever a complete newline-delimited line is received.
  *
  * The resulting function also has a `flush()` function to flush any remaining output.
  */
-export function withLineBuffer(fn) {
+function withLineBuffer(fn) {
   let buffer = [];
   const flush = () => {
     if (buffer.length > 0) {
@@ -33,4 +52,21 @@ export function withLineBuffer(fn) {
   };
   r.flush = flush;
   return r;
+}
+
+export function LogConsole() {
+  const out = withLineBuffer(console.log);
+  return {
+    deo(port, val) {
+      switch (port) {
+        case 0x8:
+          out(val);
+          break;
+      }
+    },
+
+    flush() {
+      out.flush();
+    },
+  };
 }
