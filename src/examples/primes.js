@@ -3,7 +3,13 @@ import { asm, mux, LogConsole } from "uxn.wasm/util";
 
 (async () => {
   const uxn = new Uxn();
+
+  // Initialize the system with 1 device: a console at device offset 0x10 that
+  // logs output using `console.log`.
   await uxn.init(mux(uxn, { 0x10: new LogConsole() }));
+
+  // Assemble the program written in Uxntal assembly language into a binary ROM
+  // using `asm`, and load it into the core.
   uxn.load(
     asm(`
 ( Source: https://git.sr.ht/~rabbits/uxn/tree/main/item/projects/examples/exercises )
@@ -16,7 +22,7 @@ import { asm, mux, LogConsole } from "uxn.wasm/util";
       &skip
     INC2 NEQ2k ?&loop
   POP2 POP2
-  #0a18 DEO
+  ( flush ) #0a18 DEO
   ( halt ) #010f DEO
 BRK
 
@@ -32,10 +38,12 @@ JMP2r
 
 @print ( short* -- )
   &short ( short* -- ) SWP print/byte
-  &byte ( byte -- ) DUP #04 SFT print/char
-  &char ( char -- ) #0f AND DUP #09 GTH #27 MUL ADD #30 ADD #18 DEO
+  &byte  ( byte   -- ) DUP #04 SFT print/char
+  &char  ( char   -- ) #0f AND DUP #09 GTH #27 MUL ADD #30 ADD #18 DEO
 JMP2r
 `)
   );
+
+  // Start running at the default offset (0x100)
   uxn.eval();
 })();
