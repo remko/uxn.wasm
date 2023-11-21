@@ -1,6 +1,5 @@
-import asm from "./asm.js";
-
-export { asm };
+export { asm } from "./asm.js";
+export { decodeUlz, encodeUlz } from "./ulz.js";
 
 export function peek16(mem, addr) {
   return (mem[addr] << 8) | mem[addr + 1];

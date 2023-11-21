@@ -4,10 +4,22 @@ import { Uxn } from "../uxn";
 import { expect } from "chai";
 import testsTAL from "./tests.tal";
 import opctestTAL from "./opctest.tal";
-import { asm as asm_ } from "../util/index.js";
+import {
+  asm as asm_,
+  decodeUlz as decodeUlz_,
+  encodeUlz as encodeUlz_,
+} from "../util/index.js";
 
 function asm(v) {
   return Array.from(asm_(v));
+}
+
+function decodeUlz(v) {
+  return Array.from(decodeUlz_(v));
+}
+
+function encodeUlz(v) {
+  return Array.from(encodeUlz_(v));
 }
 
 const [
@@ -812,6 +824,90 @@ function loadTests() {
       it("should skip nested comments", () => {
         const result = asm("( ( Foo\n)Bar)#10");
         expect(result).to.eql([LIT, 0x10]);
+      });
+    });
+
+    ////////////////////////////////////////////////////////////////////////////////
+
+    describe("ulz", () => {
+      const tests = [
+        {
+          decoded: `Blue like my corvette its in and outside
+Blue are the words I say
+And what I think
+Blue are the feelings
+That live inside me
+I'm blue
+Da ba dee da ba di
+Da ba dee da ba di
+Da ba dee da ba di
+Da ba dee da ba di`,
+          encoded: [
+            0x28, 0x42, 0x6c, 0x75, 0x65, 0x20, 0x6c, 0x69, 0x6b, 0x65, 0x20,
+            0x6d, 0x79, 0x20, 0x63, 0x6f, 0x72, 0x76, 0x65, 0x74, 0x74, 0x65,
+            0x20, 0x69, 0x74, 0x73, 0x20, 0x69, 0x6e, 0x20, 0x61, 0x6e, 0x64,
+            0x20, 0x6f, 0x75, 0x74, 0x73, 0x69, 0x64, 0x65, 0x0a, 0x81, 0x28,
+            0x23, 0x61, 0x72, 0x65, 0x20, 0x74, 0x68, 0x65, 0x20, 0x77, 0x6f,
+            0x72, 0x64, 0x73, 0x20, 0x49, 0x20, 0x73, 0x61, 0x79, 0x0a, 0x41,
+            0x6e, 0x64, 0x20, 0x77, 0x68, 0x61, 0x74, 0x20, 0x49, 0x20, 0x74,
+            0x68, 0x69, 0x6e, 0x6b, 0x8a, 0x29, 0x09, 0x66, 0x65, 0x65, 0x6c,
+            0x69, 0x6e, 0x67, 0x73, 0x0a, 0x54, 0x80, 0x22, 0x06, 0x6c, 0x69,
+            0x76, 0x65, 0x20, 0x69, 0x6e, 0x80, 0x50, 0x17, 0x20, 0x6d, 0x65,
+            0x0a, 0x49, 0x27, 0x6d, 0x20, 0x62, 0x6c, 0x75, 0x65, 0x0a, 0x44,
+            0x61, 0x20, 0x62, 0x61, 0x20, 0x64, 0x65, 0x65, 0x20, 0x64, 0x82,
+            0x09, 0x00, 0x69, 0xb5, 0x12,
+          ],
+        },
+        {
+          decoded: `abcd`,
+          encoded: [0x03, 0x61, 0x62, 0x63, 0x64],
+        },
+        {
+          decoded: `abcdabcdabcd`,
+          encoded: [0x03, 0x61, 0x62, 0x63, 0x64, 0x84, 0x03],
+        },
+      ];
+
+      describe("decodeUlz", () => {
+        for (const t of tests) {
+          it(`should decode "${t.decoded.substr(0, 10)}"`, () => {
+            const result = decodeUlz(t.encoded);
+            expect(result.map((c) => String.fromCharCode(c)).join("")).to.eql(
+              t.decoded
+            );
+          });
+        }
+
+        it("should not allow out-of-bounds LIT", () => {
+          expect(() => decodeUlz([0x2, 0x1])).to.throw();
+        });
+
+        it("should not allow underflow CPY", () => {
+          expect(() => decodeUlz([0x81, 0x1])).to.throw();
+        });
+
+        it("should not allow incomplete CPY instruction", () => {
+          expect(() => decodeUlz([0x1, 0x2, 0x3, 0x81])).to.throw();
+        });
+
+        it("should not allow incomplete CPY2 instruction", () => {
+          expect(() => decodeUlz([0x1, 0x2, 0x3, 0xc1])).to.throw();
+        });
+
+        it("should not allow incomplete CPY2 instruction (2)", () => {
+          expect(() => decodeUlz([0x1, 0x2, 0x3, 0xc1, 0x1])).to.throw();
+        });
+      });
+
+      describe("encodeUlz", () => {
+        for (const t of tests) {
+          it(`should encode "${t.decoded.substr(0, 10)}"`, () => {
+            const result = encodeUlz(
+              t.decoded.split("").map((c, i) => c.charCodeAt(0))
+            );
+            expect(result).to.eql(t.encoded);
+          });
+        }
       });
     });
   });

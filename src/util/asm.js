@@ -94,7 +94,7 @@ function expandLabel(label, currentLabel) {
   return assertValidName(label);
 }
 
-export default function asm(
+export function asm(
   source,
   options = {
     include: () => {
