@@ -24,6 +24,8 @@ Goals of this implementation (in descending order of priority) are:
   changed, check the impact on performance of the benchmarks (and
   microbenchmarks) to understand the impact on speed.
 
+See [this blog post](https://mko.re/blog/uxn-wasm/) for some context,
+implementation details, and benchmarks.
 
 ## Installation
 
