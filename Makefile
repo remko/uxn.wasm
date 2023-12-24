@@ -7,6 +7,7 @@ ifeq ($(DEBUG),1)
 WAT2WASM_FLAGS:=$(WAT2WASM_FLAGS) --debug-names
 BUILD_FLAGS:=--development
 endif
+CLI=./src/cli/uxncli
 
 all: build
 
@@ -37,6 +38,18 @@ bench-native: build/mandelbrot.rom build/primes32.rom
 	@echo primes32
 	@for i in `seq 0 4`; do \
 		time (uxncli build/primes32.rom < /dev/null > /dev/null); true; \
+	done
+
+bench-cli: build/mandelbrot.rom build/primes32.rom
+	$(MAKE) -C src/cli
+	@echo mandelbrot
+	@for i in `seq 0 4`; do \
+		time ($(CLI) build/mandelbrot.rom < /dev/null); true; \
+	done
+	@echo
+	@echo primes32
+	@for i in `seq 0 4`; do \
+		time ($(CLI) build/primes32.rom < /dev/null > /dev/null); true; \
 	done
 
 build/mandelbrot.rom: src/benchmarks/mandelbrot.tal
