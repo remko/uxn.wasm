@@ -1,8 +1,10 @@
+ROOT_DIR := $(dir $(lastword $(MAKEFILE_LIST)))../..
+
 .DEFAULT_GOAL := all
 
 VERSION?=$(shell cat ../../package.json | grep '"version"' | sed -e 's/.*:.*"\(.*\)".*/\1/')
 
-UXNASM ?= $(PWD)/scripts/uxnasm.js
+UXNASM ?= $(ROOT_DIR)/scripts/uxnasm.js
 
 ifeq ($(OS),Windows_NT)
 CXX = g++
