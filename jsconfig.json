@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "noImplicitAny": true,
+    "target": "es2017",
+    "strict": true,
+    "checkJs": true,
+    "baseUrl": "src"
+  },
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "src/tests",
+    "src/benchmarks",
+    "src/examples"
+  ]
+}

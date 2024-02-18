@@ -43,6 +43,10 @@ const opcodes = [
   "SFT",
 ];
 
+/**
+ * @param {string} s
+ * @returns {number}
+ */
 function opcode(s) {
   if (s === "BRK") {
     return 0;
@@ -72,14 +76,26 @@ function opcode(s) {
   return -1;
 }
 
+/**
+ * @param {string} c
+ * @returns {boolean}
+ */
 function isNumber(c) {
   return /^([0-9A-Fa-f]{4}|[0-9A-Fa-f]{2})$/.test(c);
 }
 
+/**
+ * @param {string} c
+ * @returns {boolean}
+ */
 function isWhitespace(c) {
   return /\s/.test(c);
 }
 
+/**
+ * @param {string} l
+ * @returns {string}
+ */
 function assertValidName(l) {
   if (isNumber(l)) {
     throw new Error(`label is a number: ${l}`);
@@ -87,6 +103,11 @@ function assertValidName(l) {
   return l;
 }
 
+/**
+ * @param {string} label
+ * @param {string} currentLabel
+ * @returns {string}
+ */
 function expandLabel(label, currentLabel) {
   if (label.startsWith("&")) {
     return currentLabel + "/" + assertValidName(label.slice(1));
@@ -94,6 +115,11 @@ function expandLabel(label, currentLabel) {
   return assertValidName(label);
 }
 
+/**
+ * @param {string} source
+ * @param {{include: (file: string) => string}} options
+ * @returns {Uint8Array}
+ */
 export function asm(
   source,
   options = {
@@ -143,8 +169,10 @@ export function asm(
   ////////////////////////////////////////////////////////////////////////////////
 
   let cp = 0x100;
+  /** @type  {number[]} */
   const code = [];
 
+  /** @param  {...number} cs */
   function emit(...cs) {
     if (cp < 0x100) {
       throw Error("unexpected emit");
@@ -155,6 +183,7 @@ export function asm(
     }
   }
 
+  /** @param  {...number} cs */
   function emit2(...cs) {
     if (cp < 0x100) {
       throw Error("unexpected emit");
@@ -168,15 +197,19 @@ export function asm(
 
   ////////////////////////////////////////////////////////////////////////////////
 
+  /** @type {number[]} */
   const lambdas = [];
+  /** @type {Record<string, string>} */
   const macros = {};
+  /** @type {Record<string, number>} */
   const labels = {};
+  /** @type {Array<{type: "-"|","|"."|";"|"="|"!"|"_"|"-"|"?"|""; label: string; offset: number}>} */
   const refs = [];
   let currentLabel = "on-reset";
 
   for (let token = readToken(); token != null; token = readToken()) {
     const c0 = token[0];
-    const rtoken = token.substr(1);
+    const rtoken = token.substring(1);
     if (token === "[" || token === "]") {
       continue;
     } else if (token === "{") {
@@ -186,10 +219,10 @@ export function asm(
       emit(JCI, 0x00, 0x00);
       lambdas.push(cp - 2);
     } else if (token === "}") {
-      if (lambdas.length <= 0) {
+      const l = lambdas.pop();
+      if (l == null) {
         throw new Error("unexpected lambda end");
       }
-      const l = lambdas.pop();
       const ocp = cp;
       cp = l;
       emit2(ocp - cp - 2);

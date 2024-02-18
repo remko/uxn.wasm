@@ -1,4 +1,9 @@
+/**
+ * @param {Uint8Array} src
+ * @returns {Uint8Array}
+ */
 export function decodeUlz(src) {
+  /** @type {number[]} */
   const dst = [];
   let sp = 0;
   while (sp < src.length) {
@@ -39,6 +44,13 @@ export function decodeUlz(src) {
 
 const MIN_MAX_LENGTH = 4;
 
+/**
+ * @param {Uint8Array} src
+ * @param {number} sp
+ * @param {number} dlen
+ * @param {number} slen
+ * @returns {[number, number]}
+ */
 function findBestMatch(src, sp, dlen, slen) {
   let bmlen = 0;
   let bmp = 0;
@@ -61,7 +73,12 @@ function findBestMatch(src, sp, dlen, slen) {
   return [bmp, bmlen];
 }
 
+/**
+ * @param {Uint8Array} src
+ * @returns {Uint8Array}
+ */
 export function encodeUlz(src) {
+  /** @type {number[]} */
   let dst = [];
   let sp = 0;
   let litp = -1;

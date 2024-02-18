@@ -1,15 +1,37 @@
 export { asm } from "./asm.js";
 export { decodeUlz, encodeUlz } from "./ulz.js";
 
+/**
+ * @param {Uint8Array} mem
+ * @param {number} addr
+ * @returns {number}
+ */
 export function peek16(mem, addr) {
   return (mem[addr] << 8) | mem[addr + 1];
 }
 
+/**
+ * @param {Uint8Array} mem
+ * @param {number} addr
+ * @param {number} val
+ */
 export function poke16(mem, addr, val) {
   mem[addr] = val >> 8;
   mem[addr + 1] = val;
 }
 
+/**
+ * @typedef {{
+ *   deo?: (port: number, val: number) => void;
+ *   dei?: (port: number) => number;
+ * }} Device
+ */
+
+/**
+ * @param {import("../uxn.js").Uxn} uxn
+ * @param {Record<number, Device>} devices
+ * @returns {Device}
+ */
 export function mux(uxn, devices) {
   return {
     deo(port, val) {
@@ -33,9 +55,12 @@ export function mux(uxn, devices) {
  * Creates a function that accepts character codes in UTF-8 encoding, and calls
  * the callback whenever a complete newline-delimited line is received.
  *
- * The resulting function also has a `flush()` function to flush any remaining output.
+ * @param {(line: string) => void} fn - The callback to call when a complete line was received (or a flush was initiated)
+ * @returns {{(c: number): void; flush: () => void;}} A function that accepts character codes in UTF-8 encoding.
+ *   The function also has a `flush()` property to flush any remaining output.
  */
 function withLineBuffer(fn) {
+  /** @type {number[]} */
   let buffer = [];
   const flush = () => {
     if (buffer.length > 0) {
@@ -43,7 +68,7 @@ function withLineBuffer(fn) {
       buffer = [];
     }
   };
-  const r = (c) => {
+  const r = (/** @type {number} */ c) => {
     buffer.push(c);
     if (c == 0xa) {
       flush();
@@ -53,6 +78,7 @@ function withLineBuffer(fn) {
   return r;
 }
 
+/** @returns {Device & {flush: () => void}} */
 export function LogConsole() {
   const out = withLineBuffer(console.log);
   return {

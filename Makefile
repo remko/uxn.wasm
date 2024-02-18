@@ -73,3 +73,6 @@ clean:
 lint:
 	$(ESLINT) .
 
+TSC ?= tsc
+lint-tsc:
+	$(TSC) --project jsconfig.json --noEmit
