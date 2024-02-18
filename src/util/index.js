@@ -81,6 +81,47 @@ export function withLineBuffer(fn) {
   return r;
 }
 
+/**
+ * Creates a function that accepts character codes in UTF-8 encoding, and calls
+ * the callback whenever a complete codepoint is received.
+ *
+ * @param {(line: string) => void} fn - The callback to call when a complete
+ *  codepoint was received
+ * @returns {(c: number) => void} A function that accepts character codes in
+ *   UTF-8 encoding.
+ */
+export function withBuffer(fn) {
+  /** @type {number[]} */
+  let buffer = [];
+  let n = 0;
+  const decoder = new TextDecoder();
+  return (/** @type {number} */ c) => {
+    if (n > 0) {
+      buffer.push(c);
+      n--;
+      if (n === 0) {
+        fn(decoder.decode(Uint8Array.from(buffer)));
+        buffer = [];
+      }
+    } else if ((c & 0x80) === 0x00) {
+      fn(String.fromCharCode(c));
+    } else {
+      buffer.push(c);
+      if ((c & 0xe0) === 0xc0) {
+        n = 1;
+      } else if ((c & 0xf0) === 0xe0) {
+        n = 2;
+      } else if ((c & 0xf8) === 0xf0) {
+        n = 3;
+      } else if ((c & 0xfc) === 0xf8) {
+        n = 4;
+      } else if ((c & 0xfe) === 0xfc) {
+        n = 5;
+      }
+    }
+  };
+}
+
 /** @returns {Device & {flush: () => void}} */
 export function LogConsole() {
   const out = withLineBuffer(console.log);

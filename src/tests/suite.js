@@ -9,6 +9,7 @@ import {
   decodeUlz as decodeUlz_,
   encodeUlz as encodeUlz_,
   withLineBuffer,
+  withBuffer,
 } from "../util/index.js";
 
 function asm(v) {
@@ -969,6 +970,42 @@ Da ba dee da ba di`,
           writeBuffer.flush();
           writeBuffer.flush();
           expect(out).to.eql(["he"]);
+        });
+      });
+
+      describe("withBuffer", () => {
+        let writeBuffer;
+
+        beforeEach(() => {
+          out = [];
+          writeBuffer = withBuffer(writeOut);
+        });
+
+        it("should buffer ascii characters", () => {
+          writeBuffer("h".charCodeAt(0));
+          expect(out).to.eql(["h"]);
+          writeBuffer("e".charCodeAt(0));
+          expect(out).to.eql(["h", "e"]);
+        });
+
+        it("should buffer 2-byte utf-8 characters", () => {
+          writeBuffer(0xc3);
+          expect(out).to.eql([]);
+          writeBuffer(0xa7);
+          expect(out).to.eql(["ç"]);
+          writeBuffer("o".charCodeAt(0));
+          expect(out).to.eql(["ç", "o"]);
+        });
+
+        it("should buffer 4-byte utf-8 characters", () => {
+          writeBuffer(0xf0);
+          expect(out).to.eql([]);
+          writeBuffer(0x93);
+          expect(out).to.eql([]);
+          writeBuffer(0x80);
+          expect(out).to.eql([]);
+          writeBuffer(0x80);
+          expect(out).to.eql(["𓀀"]);
         });
       });
     });
