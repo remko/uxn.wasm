@@ -62,9 +62,10 @@ export function mux(uxn, devices) {
 function withLineBuffer(fn) {
   /** @type {number[]} */
   let buffer = [];
+  const decoder = new TextDecoder();
   const flush = () => {
     if (buffer.length > 0) {
-      fn(new TextDecoder().decode(Uint8Array.from(buffer)));
+      fn(decoder.decode(Uint8Array.from(buffer)));
       buffer = [];
     }
   };
