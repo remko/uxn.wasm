@@ -97,6 +97,9 @@ export function withBuffer(fn) {
   const decoder = new TextDecoder();
   return (/** @type {number} */ c) => {
     if (n > 0) {
+      if ((c & 0xc0) !== 0x80) {
+        throw new Error("invalid utf-8 continuation byte");
+      }
       buffer.push(c);
       n--;
       if (n === 0) {
@@ -117,6 +120,8 @@ export function withBuffer(fn) {
         n = 4;
       } else if ((c & 0xfe) === 0xfc) {
         n = 5;
+      } else {
+        throw new Error("invalid utf-8 leading byte");
       }
     }
   };

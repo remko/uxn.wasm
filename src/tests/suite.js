@@ -1007,6 +1007,16 @@ Da ba dee da ba di`,
           writeBuffer(0x80);
           expect(out).to.eql(["𓀀"]);
         });
+
+        it("should throw on invalid continuation byte", () => {
+          writeBuffer(0xf0);
+          expect(out).to.eql([]);
+          expect(() => writeBuffer(0x20)).to.throw();
+        });
+
+        it("should throw on invalid initial byte", () => {
+          expect(() => writeBuffer(0xfe)).to.throw();
+        });
       });
     });
   });
