@@ -8,6 +8,7 @@ import {
   asm as asm_,
   decodeUlz as decodeUlz_,
   encodeUlz as encodeUlz_,
+  withLineBuffer,
 } from "../util/index.js";
 
 function asm(v) {
@@ -908,6 +909,67 @@ Da ba dee da ba di`,
             expect(result).to.eql(t.encoded);
           });
         }
+      });
+    });
+
+    ////////////////////////////////////////////////////////////////////////////////
+
+    describe("buffer", () => {
+      let out;
+
+      function writeOut(c) {
+        out.push(c);
+      }
+
+      describe("withLineBuffer", () => {
+        let writeBuffer;
+
+        beforeEach(() => {
+          out = [];
+          writeBuffer = withLineBuffer(writeOut);
+        });
+
+        it("should buffer ascii characters", () => {
+          writeBuffer("h".charCodeAt(0));
+          expect(out).to.eql([]);
+          writeBuffer("e".charCodeAt(0));
+          expect(out).to.eql([]);
+          writeBuffer(0x0a);
+          expect(out).to.eql(["he\n"]);
+          writeBuffer("l".charCodeAt(0));
+          writeBuffer("l".charCodeAt(0));
+          writeBuffer("o".charCodeAt(0));
+          writeBuffer(0x0a);
+          expect(out).to.eql(["he\n", "llo\n"]);
+        });
+
+        it("should buffer utf-8 characters", () => {
+          writeBuffer(0xc3);
+          writeBuffer(0xa7);
+          writeBuffer("o".charCodeAt(0));
+          expect(out).to.eql([]);
+          writeBuffer(0x0a);
+          expect(out).to.eql(["ço\n"]);
+        });
+
+        it("should flush", () => {
+          writeBuffer("h".charCodeAt(0));
+          expect(out).to.eql([]);
+          writeBuffer("e".charCodeAt(0));
+          expect(out).to.eql([]);
+          writeBuffer.flush();
+          expect(out).to.eql(["he"]);
+        });
+
+        it("should ignore empty flush", () => {
+          writeBuffer("h".charCodeAt(0));
+          expect(out).to.eql([]);
+          writeBuffer("e".charCodeAt(0));
+          expect(out).to.eql([]);
+          writeBuffer.flush();
+          writeBuffer.flush();
+          expect(out).to.eql(["he"]);
+        });
       });
     });
   });

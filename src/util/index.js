@@ -55,11 +55,13 @@ export function mux(uxn, devices) {
  * Creates a function that accepts character codes in UTF-8 encoding, and calls
  * the callback whenever a complete newline-delimited line is received.
  *
- * @param {(line: string) => void} fn - The callback to call when a complete line was received (or a flush was initiated)
- * @returns {{(c: number): void; flush: () => void;}} A function that accepts character codes in UTF-8 encoding.
+ * @param {(line: string) => void} fn - The callback to call when a complete
+ *   line was received (or a flush was initiated)
+ * @returns {{(c: number): void; flush: () => void;}} A function that accepts
+ *   character codes in UTF-8 encoding.
  *   The function also has a `flush()` property to flush any remaining output.
  */
-function withLineBuffer(fn) {
+export function withLineBuffer(fn) {
   /** @type {number[]} */
   let buffer = [];
   const decoder = new TextDecoder();
