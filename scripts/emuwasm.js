@@ -1,5 +1,11 @@
 #!/usr/bin/env node
 
+const WST_OFFSET = 0x10000;
+const RST_OFFSET = 0x10100;
+const IO_OFFSET = 0x10200;
+const STATE_OFFSET = 0x1020f;
+const MEMORY_SIZE = 0x10300;
+
 const instructions = [
   [
     "BRK",
@@ -207,7 +213,7 @@ const instructions = [
 (local.set $t (#T))
 (local.set $n (#N))
 (#set 2 -2)
-(i32.store8 offset=0x10200 (local.get $t) (local.get $n))
+(i32.store8 offset=0x${IO_OFFSET.toString(16)} (local.get $t) (local.get $n))
 (call $deo (local.get $t) (local.get $n))
 `,
   ],
@@ -497,9 +503,11 @@ const instructions = [
 (local.set $n (#N))
 (local.set $l (#L))
 (#set 3 -3)
-(i32.store8 offset=0x10200 (local.get $t) (local.get $l))
+(i32.store8 offset=0x${IO_OFFSET.toString(16)} (local.get $t) (local.get $l))
 (call $deo (local.get $t) (local.get $l))
-(i32.store8 offset=0x10200 (local.tee $t (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xff))) (local.get $n))
+(i32.store8 offset=0x${IO_OFFSET.toString(
+      16
+    )} (local.tee $t (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xff))) (local.get $n))
 (call $deo (local.get $t) (local.get $n))
 `,
   ],
@@ -810,7 +818,9 @@ function generate() {
     (local $mval i32)
 
     (if (i32.eqz (local.get $pc)) (then (return)))
-    (if (i32.load8_u (i32.const 0x1020f)) (then (return)))
+    (if (i32.load8_u (i32.const 0x${STATE_OFFSET.toString(
+      16
+    )})) (then (return)))
 
     (local.set $wstp (global.get $wstp))
     (local.set $rstp (global.get $rstp))
@@ -886,7 +896,8 @@ function generate() {
       let reg = regname;
       for (const flip of [false, true]) {
         const stack = mode_rst ^ flip ? "rst" : "wst";
-        const offset = mode_rst ^ flip ? "0x10100" : "0x10000";
+        const offset =
+          "0x" + (mode_rst ^ flip ? RST_OFFSET : WST_OFFSET).toString(16);
         reg = (flip ? "~" : "") + reg;
         macros.push(
           ...[
@@ -997,12 +1008,14 @@ function generate() {
   (func $reset (export "reset")
     (global.set $wstp (i32.const 0x00))
     (global.set $rstp (i32.const 0x00))
-    (memory.fill (i32.const 0x0) (i32.const 0x0) (i32.const 0x10300)))
+    (memory.fill (i32.const 0x0) (i32.const 0x0) (i32.const 0x${MEMORY_SIZE.toString(
+      16
+    )})))
 
   (func (export "wstp") (result i32) (global.get $wstp))
   (func (export "rstp") (result i32) (global.get $rstp))
 
-  (memory (export "memory") 2)
+  (memory (export "memory") ${Math.ceil(MEMORY_SIZE / 0x10000)})
 
   (global $wstp (mut i32) (i32.const 0))
   (global $rstp (mut i32) (i32.const 0)))
