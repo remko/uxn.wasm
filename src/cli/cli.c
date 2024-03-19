@@ -3,6 +3,8 @@
 
 #include "cli_core.h"
 
+#define IO_OFFSET 0x100200
+
 typedef struct w2c_system {
   wasm_rt_memory_t *mem;
 } w2c_system;
@@ -17,7 +19,7 @@ void w2c_system_deo(struct w2c_system *sys, u32 port, u32 value) {
 }
 
 u32 w2c_system_dei(struct w2c_system *sys, u32 port) {
-  return (u32)sys->mem->data[0x10200 + port];
+  return (u32)sys->mem->data[IO_OFFSET + port];
 }
 
 int main(int argc, char **argv) {

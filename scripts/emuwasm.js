@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-const WST_OFFSET = 0x10000;
-const RST_OFFSET = 0x10100;
-const IO_OFFSET = 0x10200;
-const STATE_OFFSET = 0x1020f;
-const MEMORY_SIZE = 0x10300;
+const WST_OFFSET = 0x100000;
+const RST_OFFSET = 0x100100;
+const IO_OFFSET = 0x100200;
+const STATE_OFFSET = 0x10020f;
+const MEMORY_SIZE = 0x100300;
 
 const instructions = [
   [
