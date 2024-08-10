@@ -11,6 +11,7 @@
     (local $val i32)
     (local $mval i32)
 
+    ;; Check PC and `state` ( https://wiki.xxiivv.com/site/varvara.html#system )
     (if (i32.eqz (local.get $pc)) (then (return)))
     (if (i32.load8_u (i32.const 0x10020f)) (then (return)))
 
