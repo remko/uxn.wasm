@@ -10,6 +10,7 @@ runs:
   - if: runner.os == 'Linux'
     run: |
       curl -L -s https://github.com/WebAssembly/wabt/releases/download/1.0.33/wabt-1.0.33-ubuntu.tar.gz | tar xvz -C /tmp
+      sudo mkdir -p /usr/local/bin /usr/local/include /usr/local/lib /usr/local/share
       sudo mv /tmp/wabt-1.0.33/bin/* /usr/local/bin
       sudo mv /tmp/wabt-1.0.33/include/* /usr/local/include
       sudo mv /tmp/wabt-1.0.33/lib/*.a /usr/local/lib
@@ -21,10 +22,10 @@ runs:
   - if: runner.os == 'macOS'
     run: |
       curl -L -s https://github.com/WebAssembly/wabt/releases/download/1.0.33/wabt-1.0.33-macos-12.tar.gz | tar xvz -C /tmp
-      sudo mv /tmp/wabt-1.0.33/bin/* /usr/local/bin
-      sudo mv /tmp/wabt-1.0.33/include/* /usr/local/include
-      sudo mv /tmp/wabt-1.0.33/lib/*.a /usr/local/lib
-      sudo mv /tmp/wabt-1.0.33/share/wabt /usr/local/share
+      sudo mv /tmp/wabt-1.0.33/bin/* `brew --prefix`/bin
+      sudo mv /tmp/wabt-1.0.33/include/* `brew --prefix`/include
+      sudo mv /tmp/wabt-1.0.33/lib/*.a `brew --prefix`/lib
+      sudo mv /tmp/wabt-1.0.33/share/wabt `brew --prefix`/share
     shell: bash
   - if: runner.os == 'Windows'
     run: |
