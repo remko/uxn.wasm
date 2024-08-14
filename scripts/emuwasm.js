@@ -804,6 +804,8 @@ const instructions = [
 ];
 
 function generate() {
+  const docs = getDocumentation();
+
   let out = `(module $uxn
   (import "system" "deo" (func $deo (param i32) (param i32)))
   (import "system" "dei" (func $dei (param i32) (result i32)))
@@ -830,8 +832,12 @@ function generate() {
         (local.set $val (i32.load8_u (local.get $pc)))
         (local.set $pc (i32.add (local.get $pc) (i32.const 1)))
 
-        ;; Uxntal Opcodes
-        ;; https://wiki.xxiivv.com/site/uxntal_opcodes.html
+        ;; Uxntal Opcodes (https://wiki.xxiivv.com/site/uxntal_opcodes.html)
+        ;;
+        ;; Opcode documentation below includes stack effects on a given stack a b c.
+        ;; | denotes the effect on the return Stack.
+        ;; For the \`r\` variants, the stack effect describes the reset stack effect, and 
+        ;; | the working stack effect.
 `;
 
   instructions
@@ -857,9 +863,32 @@ function generate() {
 
   instructions.forEach((inss, ins) => {
     const insn = inss[0];
+    const doc = docs[insn.replace(/2?k?r?$/, "")];
     const mode_keep = !!(ins & 0x80);
     const mode_rst = !!(ins & 0x40);
-    out += `        );; ${insn}\n`;
+    out += `        );;\n`;
+    out += `        ;;; ${insn} (${sig(doc.sig, mode_keep, mode_rst)}) [0x${ins
+      .toString(16)
+      .padStart(2, 0)}]\n`;
+    out += `        ;;;\n`;
+    out += `        ;;; ${doc.title}\n`;
+    out += `        ;;;\n`;
+    for (const d of linebreak(doc.description).split("\n")) {
+      out += `        ;;; ${d}\n`;
+    }
+    const ex = filterExamples(doc.examples, insn);
+    if (ex.length) {
+      out += `        ;;;\n`;
+      if (ex.length > 1) {
+        out += `        ;;; Examples:\n`;
+      } else {
+        out += `        ;;; Example:\n`;
+      }
+      for (const d of ex) {
+        out += `        ;;;   ${d}\n`;
+      }
+    }
+    out += `        ;;;\n`;
     let code;
     if (inss[1] != null) {
       code = inss[1].slice(1);
@@ -1045,6 +1074,133 @@ function replaceSet(m1, m2, is_rst, is_keep, flip) {
   } else {
     return "";
   }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Opcode documentation
+////////////////////////////////////////////////////////////////////////////////
+
+import * as fs from "fs";
+import * as path from "path";
+import { fileURLToPath } from "url";
+
+function getDocumentation() {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+  const titleRE = /^<h3 id='([^']+)'>([^<]+)<\/h3>/;
+  const sigRE =
+    /<code class='op'>([^<]+) <code class="sig">([^<]+)<\/code><\/code>/;
+  const htmlTagRE = /<[^>]+>/g;
+
+  const opcodes = [];
+  let cur = null;
+  let inExample = false;
+  const reference = fs
+    .readFileSync(path.join(__dirname, "resources", "uxntal_reference.html"))
+    .toString("utf-8");
+  for (const line of reference.split("\n")) {
+    let m;
+    if ((m = line.match(titleRE))) {
+      if (cur != null) {
+        opcodes.push(cur);
+      }
+      cur = {
+        id: m[1],
+        title: m[2],
+        description: "",
+      };
+      inExample = false;
+    } else if (line.startsWith("<pre>")) {
+      inExample = true;
+    } else if (line.startsWith("</pre>")) {
+      inExample = false;
+    } else if (inExample) {
+      cur.examples = (cur.examples ?? "") + line + "\n";
+    } else if ((m = line.match(sigRE))) {
+      cur.opcode = m[1].trim();
+      cur.sig = m[2].trim();
+    } else if (line.startsWith("<style>")) {
+      break;
+    } else if (cur != null) {
+      const description = line.replaceAll(htmlTagRE, "").trim();
+      if (description) {
+        cur.description += description + "\n";
+      }
+    }
+  }
+  if (cur != null) {
+    opcodes.push(cur);
+  }
+
+  if (opcodes.length != 36) {
+    throw new Error(
+      "invalid opcode count: " +
+        opcodes.length +
+        "\n" +
+        JSON.stringify(opcodes, null, 2)
+    );
+  }
+  const result = {};
+  for (const opcode of opcodes) {
+    if (!opcode.opcode) {
+      throw new Error("missing signature: " + opcode.id);
+    }
+    result[opcode.opcode] = opcode;
+  }
+  return result;
+}
+
+function linebreak(s) {
+  s = s.trim().replaceAll(/\n/g, " ");
+  const result = [];
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const i = s.indexOf(" ", 65);
+    if (i < 0) {
+      result.push(s);
+      break;
+    }
+    result.push(s.slice(0, i));
+    s = s.slice(i + 1);
+  }
+  return result.join("\n");
+}
+
+const sigRE = /(.*)--(.*)( |.*)?/;
+
+function sig(s, keep) {
+  const m = s.match(sigRE);
+  if (!m) {
+    throw Error("invalid signature " + s);
+  }
+  const prewst = m[1].trim();
+  let postwst = m[2].trim();
+  let postrst = m[3] == null ? null : m[3].slice(1).trim();
+  let result = prewst + " -- ";
+  if (keep) {
+    result += prewst + " ";
+  }
+  if (postwst) {
+    result += postwst;
+  }
+  if (postrst) {
+    result += " | " + postrst;
+  }
+  return result;
+}
+
+function filterExamples(examples, opcode) {
+  if (examples == null) {
+    return [];
+  }
+  const result = [];
+  const re = new RegExp("\\b" + opcode + "\\b");
+  for (const e of examples.trim().split("\n")) {
+    if (e.match(re)) {
+      result.push(e);
+    }
+  }
+  return result;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

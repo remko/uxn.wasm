@@ -67,6 +67,9 @@ update-tests:
 	curl -o src/benchmarks/mandelbrot.tal https://git.sr.ht/~rabbits/uxn/blob/main/projects/examples/demos/mandelbrot.tal
 	(curl https://git.sr.ht/~rabbits/uxn5/blob/main/src/uxn.js && echo "export default Uxn;") > src/benchmarks/uxn5.js
 
+update-uxntal-reference:
+	curl -o scripts/resources/uxntal_reference.html https://raw.githubusercontent.com/XXIIVV/oscean/main/src/htm/uxntal_reference.htm
+
 clean:
 	-rm -rf build dist public/uxn-wasm
 

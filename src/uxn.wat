@@ -22,8 +22,12 @@
         (local.set $val (i32.load8_u (local.get $pc)))
         (local.set $pc (i32.add (local.get $pc) (i32.const 1)))
 
-        ;; Uxntal Opcodes
-        ;; https://wiki.xxiivv.com/site/uxntal_opcodes.html
+        ;; Uxntal Opcodes (https://wiki.xxiivv.com/site/uxntal_opcodes.html)
+        ;;
+        ;; Opcode documentation below includes stack effects on a given stack a b c.
+        ;; | denotes the effect on the return Stack.
+        ;; For the `r` variants, the stack effect describes the reset stack effect, and 
+        ;; | the working stack effect.
 
         (block $SFT2kr (block $EOR2kr (block $ORA2kr (block $AND2kr (block $DIV2kr (block $MUL2kr (block $SUB2kr (block $ADD2kr (block $DEO2kr (block $DEI2kr (block $STA2kr (block $LDA2kr (block $STR2kr (block $LDR2kr (block $STZ2kr (block $LDZ2kr 
         (block $STH2kr (block $JSR2kr (block $JCN2kr (block $JMP2kr (block $LTH2kr (block $GTH2kr (block $NEQ2kr (block $EQU2kr (block $OVR2kr (block $DUP2kr (block $ROT2kr (block $SWP2kr (block $NIP2kr (block $POP2kr (block $INC2kr (block $LIT2r  
@@ -61,32 +65,85 @@
           $BRK
           (local.get $val))
 
-        );; BRK
+        );;
+        ;;; BRK ( -- ) [0x00]
+        ;;;
+        ;;; Break
+        ;;;
+        ;;; Ends the evalutation of the current vector. This opcode has no modes.
+        ;;;
         (br $endLoop)
 
-        );; INC
+        );;
+        ;;; INC (a -- a+1) [0x01]
+        ;;;
+        ;;; Increment
+        ;;;
+        ;;; Increments the value at the top of the stack, by 1.
+        ;;;
+        ;;; Example:
+        ;;;   #01 INC         ( 02 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.add (local.get $t) (i32.const 1)))
         (br $loop)
 
-        );; POP
+        );;
+        ;;; POP (a -- ) [0x02]
+        ;;;
+        ;;; Pop
+        ;;;
+        ;;; Removes the value at the top of the stack.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 POP    ( 12 )
+        ;;;
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)))
         (br $loop)
 
-        );; NIP
+        );;
+        ;;; NIP (a b -- b) [0x03]
+        ;;;
+        ;;; Nip
+        ;;;
+        ;;; Removes the second value from the stack. This is practical to convert
+        ;;; a short into a byte.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 NIP          ( 34 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (local.get $t))
         (br $loop)
 
-        );; SWP
+        );;
+        ;;; SWP (a b -- b a) [0x04]
+        ;;;
+        ;;; Swap
+        ;;;
+        ;;; Exchanges the first and second values at the top of the stack.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 SWP          ( 34 12 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (i32.store8 offset=0x100000 (local.get $wstp) (local.get $n))
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (local.get $t))
         (br $loop)
 
-        );; ROT
+        );;
+        ;;; ROT (a b c -- b c a) [0x05]
+        ;;;
+        ;;; Rotate
+        ;;;
+        ;;; Rotates three values at the top of the stack, to the left, wrapping
+        ;;; around.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 #56 ROT            ( 34 56 12 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $l (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))))
@@ -95,14 +152,32 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)) (local.get $n))
         (br $loop)
 
-        );; DUP
+        );;
+        ;;; DUP (a -- a a) [0x06]
+        ;;;
+        ;;; Duplicate
+        ;;;
+        ;;; Duplicates the value at the top of the stack.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 DUP   ( 12 34 34 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (local.get $t))
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (local.get $t))
         (br $loop)
 
-        );; OVR
+        );;
+        ;;; OVR (a b -- a b a) [0x07]
+        ;;;
+        ;;; Over
+        ;;;
+        ;;; Duplicates the second value at the top of the stack.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 OVR          ( 12 34 12 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
@@ -111,48 +186,122 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)) (local.get $n))
         (br $loop)
 
-        );; EQU
+        );;
+        ;;; EQU (a b -- bool8) [0x08]
+        ;;;
+        ;;; Equal
+        ;;;
+        ;;; Pushes 01 to the stack if the two values at the top of the stack are
+        ;;; equal, 00 otherwise.
+        ;;;
+        ;;; Example:
+        ;;;   #1212 EQU          ( 01 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.eq (local.get $t) (local.get $n)))
         (br $loop)
 
-        );; NEQ
+        );;
+        ;;; NEQ (a b -- bool8) [0x09]
+        ;;;
+        ;;; Not Equal
+        ;;;
+        ;;; Pushes 01 to the stack if the two values at the top of the stack are
+        ;;; not equal, 00 otherwise.
+        ;;;
+        ;;; Example:
+        ;;;   #1212 NEQ          ( 00 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.ne (local.get $t) (local.get $n)))
         (br $loop)
 
-        );; GTH
+        );;
+        ;;; GTH (a b -- bool8) [0x0a]
+        ;;;
+        ;;; Greater Than
+        ;;;
+        ;;; Pushes 01 to the stack if the second value at the top of the stack
+        ;;; is greater than the value at the top of the stack, 00 otherwise.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 GTH          ( 00 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.gt_u (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; LTH
+        );;
+        ;;; LTH (a b -- bool8) [0x0b]
+        ;;;
+        ;;; Lesser Than
+        ;;;
+        ;;; Pushes 01 to the stack if the second value at the top of the stack
+        ;;; is lesser than the value at the top of the stack, 00 otherwise.
+        ;;;
+        ;;; Example:
+        ;;;   #0101 LTH          ( 00 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.lt_u (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; JMP
+        );;
+        ;;; JMP (addr -- ) [0x0c]
+        ;;;
+        ;;; Jump
+        ;;;
+        ;;; Moves the PC by a relative distance equal to the signed byte on the
+        ;;; top of the stack, or to an absolute address in short mode.
+        ;;;
+        ;;; Example:
+        ;;;   ,&skip-rel JMP BRK &skip-rel #01  ( 01 )
+        ;;;
         (local.set $t (i32.load8_s offset=0x100000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)))
         (local.set $pc (i32.add (local.get $pc) (local.get $t)))
         (br $loop)
 
-        );; JCN
+        );;
+        ;;; JCN (cond8 addr -- ) [0x0d]
+        ;;;
+        ;;; Jump Conditional
+        ;;;
+        ;;; If the byte preceeding the address is not 00, moves the PC by a signed
+        ;;; value equal to the byte on the top of the stack, or to an absolute
+        ;;; address in short mode.
+        ;;;
+        ;;; Examples:
+        ;;;   #abcd #01 ,&pass JCN SWP &pass POP  ( ab )
+        ;;;   #abcd #00 ,&fail JCN SWP &fail POP  ( cd )
+        ;;;
         (local.set $t (i32.load8_s offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)))
         (local.set $pc (i32.add (local.get $pc) (select (local.get $t) (i32.const 0) (local.get $n))))
         (br $loop)
 
-        );; JSR
+        );;
+        ;;; JSR (addr -- | ret16) [0x0e]
+        ;;;
+        ;;; Jump Stash Return
+        ;;;
+        ;;; Pushes the PC to the return-stack and moves the PC by a signed value
+        ;;; equal to the byte on the top of the stack, or to an absolute address
+        ;;; in short mode.
+        ;;;
+        ;;; Examples:
+        ;;;   ,&routine JSR                     ( | PC* )
+        ;;;   ,&get JSR #01 BRK &get #02 JMP2r  ( 02 01 )
+        ;;;
         (local.set $t (i32.load8_s offset=0x100000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
@@ -161,56 +310,129 @@
         (local.set $pc (i32.add (local.get $pc) (local.get $t)))
         (br $loop)
 
-        );; STH
+        );;
+        ;;; STH (a -- | a) [0x0f]
+        ;;;
+        ;;; Stash
+        ;;;
+        ;;; Moves the value at the top of the stack to the return stack. Note
+        ;;; that with the r-mode, the stacks are exchanged and the value is moved
+        ;;; from the return stack to the working stack.
+        ;;;
+        ;;; Example:
+        ;;;   #12 STH       ( | 12 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (local.get $t))
         (br $loop)
 
-        );; LDZ
+        );;
+        ;;; LDZ (addr8 -- value) [0x10]
+        ;;;
+        ;;; Load Zero-Page
+        ;;;
+        ;;; Pushes the value at an address within the first 256 bytes of memory,
+        ;;; to the top of the stack.
+        ;;;
+        ;;; Example:
+        ;;;   |00 @cell $2 |0100 .cell LDZ ( 00 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.load8_u (local.get $t)))
         (br $loop)
 
-        );; STZ
+        );;
+        ;;; STZ (val addr8 -- ) [0x11]
+        ;;;
+        ;;; Store Zero-Page
+        ;;;
+        ;;; Writes a value to an address within the first 256 bytes of memory.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)))
         (i32.store8 (local.get $t) (local.get $n))
         (br $loop)
 
-        );; LDR
+        );;
+        ;;; LDR (addr8 -- value) [0x12]
+        ;;;
+        ;;; Load Relative
+        ;;;
+        ;;; Pushes a value at a relative address in relation to the PC, within
+        ;;; a range between -128 and +127 bytes, to the top of the stack.
+        ;;;
         (local.set $t (i32.load8_s offset=0x100000 (local.get $wstp)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.load8_u (i32.add (local.get $pc) (local.get $t))))
         (br $loop)
 
-        );; STR
+        );;
+        ;;; STR (val addr8 -- ) [0x13]
+        ;;;
+        ;;; Store Relative
+        ;;;
+        ;;; Writes a value to a relative address in relation to the PC, within
+        ;;; a range between -128 and +127 bytes.
+        ;;;
         (local.set $t (i32.load8_s offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)))
         (i32.store8 (i32.add (local.get $pc) (local.get $t)) (local.get $n))
         (br $loop)
 
-        );; LDA
+        );;
+        ;;; LDA (addr16 -- value) [0x14]
+        ;;;
+        ;;; Load Absolute
+        ;;;
+        ;;; Pushes the value at a absolute address, to the top of the stack.
+        ;;;
+        ;;; Example:
+        ;;;   ;cell LDA BRK @cell abcd ( ab )
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.load8_u (local.get $t)))
         (br $loop)
 
-        );; STA
+        );;
+        ;;; STA (val addr16 -- ) [0x15]
+        ;;;
+        ;;; Store Absolute
+        ;;;
+        ;;; Writes a value to a absolute address.
+        ;;;
+        ;;; Example:
+        ;;;   #abcd ;cell STA BRK @cell $1 ( ab )
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff)))
         (i32.store8 (local.get $t) (local.get $n))
         (br $loop)
 
-        );; DEI
+        );;
+        ;;; DEI (device8 -- value) [0x16]
+        ;;;
+        ;;; Device Input
+        ;;;
+        ;;; Pushes a value from the device page, to the top of the stack. The
+        ;;; target device might capture the reading to trigger an I/O event.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (i32.store8 offset=0x100000 (local.get $wstp) (call $dei (local.get $t)))
         (br $loop)
 
-        );; DEO
+        );;
+        ;;; DEO (val device8 -- ) [0x17]
+        ;;;
+        ;;; Device Output
+        ;;;
+        ;;; Writes a value to the device page. The target device might capture
+        ;;; the writing to trigger an I/O event.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)))
@@ -218,86 +440,199 @@
         (call $deo (local.get $t) (local.get $n))
         (br $loop)
 
-        );; ADD
+        );;
+        ;;; ADD (a b -- a+b) [0x18]
+        ;;;
+        ;;; Add
+        ;;;
+        ;;; Pushes the sum of the two values at the top of the stack.
+        ;;;
+        ;;; Example:
+        ;;;   #1a #2e ADD       ( 48 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.add (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; SUB
+        );;
+        ;;; SUB (a b -- a-b) [0x19]
+        ;;;
+        ;;; Subtract
+        ;;;
+        ;;; Pushes the difference of the first value minus the second, to the
+        ;;; top of the stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.sub (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; MUL
+        );;
+        ;;; MUL (a b -- a*b) [0x1a]
+        ;;;
+        ;;; Multiply
+        ;;;
+        ;;; Pushes the product of the first and second values at the top of the
+        ;;; stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.mul (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; DIV
+        );;
+        ;;; DIV (a b -- a/b) [0x1b]
+        ;;;
+        ;;; Divide
+        ;;;
+        ;;; Pushes the quotient of the first value over the second, to the top
+        ;;; of the stack. A division by zero pushes zero on the stack. The rounding
+        ;;; direction is toward zero.
+        ;;;
+        ;;; Example:
+        ;;;   #10 #02 DIV       ( 08 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (if (result i32) (i32.eqz (local.get $t)) (then (i32.const 0)) (else (i32.div_u (local.get $n) (local.get $t)))))
         (br $loop)
 
-        );; AND
+        );;
+        ;;; AND (a b -- a&b) [0x1c]
+        ;;;
+        ;;; And
+        ;;;
+        ;;; Pushes the result of the bitwise operation AND, to the top of the
+        ;;; stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.and (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; ORA
+        );;
+        ;;; ORA (a b -- a|b) [0x1d]
+        ;;;
+        ;;; Or
+        ;;;
+        ;;; Pushes the result of the bitwise operation OR, to the top of the stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.or (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; EOR
+        );;
+        ;;; EOR (a b -- a^b) [0x1e]
+        ;;;
+        ;;; Exclusive Or
+        ;;;
+        ;;; Pushes the result of the bitwise operation XOR, to the top of the
+        ;;; stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.xor (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; SFT
+        );;
+        ;;; SFT (a shift8 -- c) [0x1f]
+        ;;;
+        ;;; Shift
+        ;;;
+        ;;; Shifts the bits of the second value of the stack to the left or right,
+        ;;; depending on the control value at the top of the stack. The high nibble
+        ;;; of the control value indicates how many bits to shift left, and the
+        ;;; low nibble how many bits to shift right. The rightward shift is done
+        ;;; first.
+        ;;;
+        ;;; Examples:
+        ;;;   #34 #10 SFT        ( 68 )
+        ;;;   #34 #01 SFT        ( 1a )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.shl (i32.shr_u (local.get $n) (i32.and (local.get $t) (i32.const 0xf))) (i32.shr_u (local.get $t) (i32.const 4))))
         (br $loop)
 
-        );; JCI
+        );;
+        ;;; JCI (cond8 -- ) [0x20]
+        ;;;
+        ;;; Jump Conditional Instant
+        ;;;
+        ;;; Pops a byte from the working stack and if it is not zero, moves the
+        ;;; PC to a relative address at a distance equal to the next short in
+        ;;; memory, otherwise moves PC+2. This opcode has no modes.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)))
         (if (local.get $t) (then (local.set $pc (i32.add (i32.const 2) (i32.and (i32.add (local.get $pc) (i32.or (i32.shl (i32.load8_u (local.get $pc)) (i32.const 8)) (i32.load8_u (i32.and (i32.add (local.get $pc) (i32.const 1)) (i32.const 0xffff))))) (i32.const 0xffff))))) (else (local.set $pc (i32.add (local.get $pc) (i32.const 2)))))
         (br $loop)
 
-        );; INC2
+        );;
+        ;;; INC2 (a -- a+1) [0x21]
+        ;;;
+        ;;; Increment
+        ;;;
+        ;;; Increments the value at the top of the stack, by 1.
+        ;;;
+        ;;; Example:
+        ;;;   #0001 INC2      ( 00 02 )
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.and (local.tee $val (i32.add (local.get $t) (i32.const 1))) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; POP2
+        );;
+        ;;; POP2 (a -- ) [0x22]
+        ;;;
+        ;;; Pop
+        ;;;
+        ;;; Removes the value at the top of the stack.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 POP2   ( )
+        ;;;
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)))
         (br $loop)
 
-        );; NIP2
+        );;
+        ;;; NIP2 (a b -- b) [0x23]
+        ;;;
+        ;;; Nip
+        ;;;
+        ;;; Removes the second value from the stack. This is practical to convert
+        ;;; a short into a byte.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 #5678 NIP2   ( 56 78 )
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.and (local.tee $val (local.get $t)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; SWP2
+        );;
+        ;;; SWP2 (a b -- b a) [0x24]
+        ;;;
+        ;;; Swap
+        ;;;
+        ;;; Exchanges the first and second values at the top of the stack.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 #5678 SWP2   ( 56 78 12 34 )
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.and (local.tee $val (local.get $n)) (i32.const 0xff)))
@@ -306,7 +641,17 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; ROT2
+        );;
+        ;;; ROT2 (a b c -- b c a) [0x25]
+        ;;;
+        ;;; Rotate
+        ;;;
+        ;;; Rotates three values at the top of the stack, to the left, wrapping
+        ;;; around.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 #5678 #9abc ROT2   ( 56 78 9a bc 12 34 )
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $l (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 4)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 5)) (i32.const 0xff))) (i32.const 8))))
@@ -318,7 +663,16 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 5)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; DUP2
+        );;
+        ;;; DUP2 (a -- a a) [0x26]
+        ;;;
+        ;;; Duplicate
+        ;;;
+        ;;; Duplicates the value at the top of the stack.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 DUP2  ( 12 34 12 34 )
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.and (local.tee $val (local.get $t)) (i32.const 0xff)))
@@ -327,7 +681,16 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; OVR2
+        );;
+        ;;; OVR2 (a b -- a b a) [0x27]
+        ;;;
+        ;;; Over
+        ;;;
+        ;;; Duplicates the second value at the top of the stack.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 #5678 OVR2   ( 12 34 56 78 12 34 )
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
@@ -339,48 +702,111 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 5)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; EQU2
+        );;
+        ;;; EQU2 (a b -- bool8) [0x28]
+        ;;;
+        ;;; Equal
+        ;;;
+        ;;; Pushes 01 to the stack if the two values at the top of the stack are
+        ;;; equal, 00 otherwise.
+        ;;;
+        ;;; Example:
+        ;;;   #abcd #ef01 EQU2   ( 00 )
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.eq (local.get $t) (local.get $n)))
         (br $loop)
 
-        );; NEQ2
+        );;
+        ;;; NEQ2 (a b -- bool8) [0x29]
+        ;;;
+        ;;; Not Equal
+        ;;;
+        ;;; Pushes 01 to the stack if the two values at the top of the stack are
+        ;;; not equal, 00 otherwise.
+        ;;;
+        ;;; Example:
+        ;;;   #abcd #ef01 NEQ2   ( 01 )
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.ne (local.get $t) (local.get $n)))
         (br $loop)
 
-        );; GTH2
+        );;
+        ;;; GTH2 (a b -- bool8) [0x2a]
+        ;;;
+        ;;; Greater Than
+        ;;;
+        ;;; Pushes 01 to the stack if the second value at the top of the stack
+        ;;; is greater than the value at the top of the stack, 00 otherwise.
+        ;;;
+        ;;; Example:
+        ;;;   #3456 #1234 GTH2   ( 01 )
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.gt_u (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; LTH2
+        );;
+        ;;; LTH2 (a b -- bool8) [0x2b]
+        ;;;
+        ;;; Lesser Than
+        ;;;
+        ;;; Pushes 01 to the stack if the second value at the top of the stack
+        ;;; is lesser than the value at the top of the stack, 00 otherwise.
+        ;;;
+        ;;; Example:
+        ;;;   #0001 #0000 LTH2   ( 00 )
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.lt_u (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; JMP2
+        );;
+        ;;; JMP2 (addr -- ) [0x2c]
+        ;;;
+        ;;; Jump
+        ;;;
+        ;;; Moves the PC by a relative distance equal to the signed byte on the
+        ;;; top of the stack, or to an absolute address in short mode.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)))
         (local.set $pc (local.get $t))
         (br $loop)
 
-        );; JCN2
+        );;
+        ;;; JCN2 (cond8 addr -- ) [0x2d]
+        ;;;
+        ;;; Jump Conditional
+        ;;;
+        ;;; If the byte preceeding the address is not 00, moves the PC by a signed
+        ;;; value equal to the byte on the top of the stack, or to an absolute
+        ;;; address in short mode.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff)))
         (local.set $pc (select (local.get $t) (local.get $pc) (local.get $n)))
         (br $loop)
 
-        );; JSR2
+        );;
+        ;;; JSR2 (addr -- | ret16) [0x2e]
+        ;;;
+        ;;; Jump Stash Return
+        ;;;
+        ;;; Pushes the PC to the return-stack and moves the PC by a signed value
+        ;;; equal to the byte on the top of the stack, or to an absolute address
+        ;;; in short mode.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
@@ -389,7 +815,15 @@
         (local.set $pc (local.get $t))
         (br $loop)
 
-        );; STH2
+        );;
+        ;;; STH2 (a -- | a) [0x2f]
+        ;;;
+        ;;; Stash
+        ;;;
+        ;;; Moves the value at the top of the stack to the return stack. Note
+        ;;; that with the r-mode, the stacks are exchanged and the value is moved
+        ;;; from the return stack to the working stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
@@ -397,14 +831,30 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; LDZ2
+        );;
+        ;;; LDZ2 (addr8 -- value) [0x30]
+        ;;;
+        ;;; Load Zero-Page
+        ;;;
+        ;;; Pushes the value at an address within the first 256 bytes of memory,
+        ;;; to the top of the stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.get $t)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.load8_u (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xff))))
         (br $loop)
 
-        );; STZ2
+        );;
+        ;;; STZ2 (val addr8 -- ) [0x31]
+        ;;;
+        ;;; Store Zero-Page
+        ;;;
+        ;;; Writes a value to an address within the first 256 bytes of memory.
+        ;;;
+        ;;; Example:
+        ;;;   |00 @cell $2 |0100 #abcd .cell STZ2  { ab cd }
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $l (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))))
@@ -413,14 +863,34 @@
         (i32.store8 (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xff)) (local.get $n))
         (br $loop)
 
-        );; LDR2
+        );;
+        ;;; LDR2 (addr8 -- value) [0x32]
+        ;;;
+        ;;; Load Relative
+        ;;;
+        ;;; Pushes a value at a relative address in relation to the PC, within
+        ;;; a range between -128 and +127 bytes, to the top of the stack.
+        ;;;
+        ;;; Example:
+        ;;;   ,cell LDR2 BRK @cell abcd  ( ab cd )
+        ;;;
         (local.set $t (i32.load8_s offset=0x100000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.tee $mval (i32.add (local.get $pc) (local.get $t)))))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.load8_u (i32.and (i32.add (local.get $mval) (i32.const 1)) (i32.const 0xffff))))
         (br $loop)
 
-        );; STR2
+        );;
+        ;;; STR2 (val addr8 -- ) [0x33]
+        ;;;
+        ;;; Store Relative
+        ;;;
+        ;;; Writes a value to a relative address in relation to the PC, within
+        ;;; a range between -128 and +127 bytes.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 ,cell STR2 BRK @cell $2  ( )
+        ;;;
         (local.set $t (i32.load8_s offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $l (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))))
@@ -429,13 +899,25 @@
         (i32.store8 (i32.and (i32.add (local.get $mval) (i32.const 1)) (i32.const 0xffff)) (local.get $n))
         (br $loop)
 
-        );; LDA2
+        );;
+        ;;; LDA2 (addr16 -- value) [0x34]
+        ;;;
+        ;;; Load Absolute
+        ;;;
+        ;;; Pushes the value at a absolute address, to the top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.get $t)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.load8_u (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xffff))))
         (br $loop)
 
-        );; STA2
+        );;
+        ;;; STA2 (val addr16 -- ) [0x35]
+        ;;;
+        ;;; Store Absolute
+        ;;;
+        ;;; Writes a value to a absolute address.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))))
         (local.set $l (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))))
@@ -444,14 +926,28 @@
         (i32.store8 (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xffff)) (local.get $n))
         (br $loop)
 
-        );; DEI2
+        );;
+        ;;; DEI2 (device8 -- value) [0x36]
+        ;;;
+        ;;; Device Input
+        ;;;
+        ;;; Pushes a value from the device page, to the top of the stack. The
+        ;;; target device might capture the reading to trigger an I/O event.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (call $dei (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xff))))
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (call $dei (local.get $t)))
         (br $loop)
 
-        );; DEO2
+        );;
+        ;;; DEO2 (val device8 -- ) [0x37]
+        ;;;
+        ;;; Device Output
+        ;;;
+        ;;; Writes a value to the device page. The target device might capture
+        ;;; the writing to trigger an I/O event.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $l (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))))
@@ -462,7 +958,16 @@
         (call $deo (local.get $t) (local.get $n))
         (br $loop)
 
-        );; ADD2
+        );;
+        ;;; ADD2 (a b -- a+b) [0x38]
+        ;;;
+        ;;; Add
+        ;;;
+        ;;; Pushes the sum of the two values at the top of the stack.
+        ;;;
+        ;;; Example:
+        ;;;   #0001 #0002 ADD2  ( 00 03 )
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)))
@@ -470,7 +975,14 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; SUB2
+        );;
+        ;;; SUB2 (a b -- a-b) [0x39]
+        ;;;
+        ;;; Subtract
+        ;;;
+        ;;; Pushes the difference of the first value minus the second, to the
+        ;;; top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)))
@@ -478,7 +990,14 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; MUL2
+        );;
+        ;;; MUL2 (a b -- a*b) [0x3a]
+        ;;;
+        ;;; Multiply
+        ;;;
+        ;;; Pushes the product of the first and second values at the top of the
+        ;;; stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)))
@@ -486,7 +1005,18 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; DIV2
+        );;
+        ;;; DIV2 (a b -- a/b) [0x3b]
+        ;;;
+        ;;; Divide
+        ;;;
+        ;;; Pushes the quotient of the first value over the second, to the top
+        ;;; of the stack. A division by zero pushes zero on the stack. The rounding
+        ;;; direction is toward zero.
+        ;;;
+        ;;; Example:
+        ;;;   #0010 #0000 DIV2  ( 00 00 )
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)))
@@ -494,7 +1024,14 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; AND2
+        );;
+        ;;; AND2 (a b -- a&b) [0x3c]
+        ;;;
+        ;;; And
+        ;;;
+        ;;; Pushes the result of the bitwise operation AND, to the top of the
+        ;;; stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)))
@@ -502,7 +1039,13 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; ORA2
+        );;
+        ;;; ORA2 (a b -- a|b) [0x3d]
+        ;;;
+        ;;; Or
+        ;;;
+        ;;; Pushes the result of the bitwise operation OR, to the top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)))
@@ -510,7 +1053,14 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; EOR2
+        );;
+        ;;; EOR2 (a b -- a^b) [0x3e]
+        ;;;
+        ;;; Exclusive Or
+        ;;;
+        ;;; Pushes the result of the bitwise operation XOR, to the top of the
+        ;;; stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)))
@@ -518,7 +1068,17 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; SFT2
+        );;
+        ;;; SFT2 (a shift8 -- c) [0x3f]
+        ;;;
+        ;;; Shift
+        ;;;
+        ;;; Shifts the bits of the second value of the stack to the left or right,
+        ;;; depending on the control value at the top of the stack. The high nibble
+        ;;; of the control value indicates how many bits to shift left, and the
+        ;;; low nibble how many bits to shift right. The rightward shift is done
+        ;;; first.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)))
@@ -526,33 +1086,72 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; JMI
+        );;
+        ;;; JMI ( -- ) [0x40]
+        ;;;
+        ;;; Jump Instant
+        ;;;
+        ;;; Moves the PC to a relative address at a distance equal to the next
+        ;;; short in memory. This opcode has no modes.
+        ;;;
         (local.set $pc (i32.add (i32.const 2) (i32.and (i32.add (local.get $pc) (i32.or (i32.shl (i32.load8_u (local.get $pc)) (i32.const 8)) (i32.load8_u (i32.and (i32.add (local.get $pc) (i32.const 1)) (i32.const 0xffff))))) (i32.const 0xffff))))
         (br $loop)
 
-        );; INCr
+        );;
+        ;;; INCr (a -- a+1) [0x41]
+        ;;;
+        ;;; Increment
+        ;;;
+        ;;; Increments the value at the top of the stack, by 1.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.add (local.get $t) (i32.const 1)))
         (br $loop)
 
-        );; POPr
+        );;
+        ;;; POPr (a -- ) [0x42]
+        ;;;
+        ;;; Pop
+        ;;;
+        ;;; Removes the value at the top of the stack.
+        ;;;
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)))
         (br $loop)
 
-        );; NIPr
+        );;
+        ;;; NIPr (a b -- b) [0x43]
+        ;;;
+        ;;; Nip
+        ;;;
+        ;;; Removes the second value from the stack. This is practical to convert
+        ;;; a short into a byte.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (local.get $t))
         (br $loop)
 
-        );; SWPr
+        );;
+        ;;; SWPr (a b -- b a) [0x44]
+        ;;;
+        ;;; Swap
+        ;;;
+        ;;; Exchanges the first and second values at the top of the stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (i32.store8 offset=0x100100 (local.get $rstp) (local.get $n))
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (local.get $t))
         (br $loop)
 
-        );; ROTr
+        );;
+        ;;; ROTr (a b c -- b c a) [0x45]
+        ;;;
+        ;;; Rotate
+        ;;;
+        ;;; Rotates three values at the top of the stack, to the left, wrapping
+        ;;; around.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $l (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))))
@@ -561,14 +1160,26 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)) (local.get $n))
         (br $loop)
 
-        );; DUPr
+        );;
+        ;;; DUPr (a -- a a) [0x46]
+        ;;;
+        ;;; Duplicate
+        ;;;
+        ;;; Duplicates the value at the top of the stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (local.get $t))
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (local.get $t))
         (br $loop)
 
-        );; OVRr
+        );;
+        ;;; OVRr (a b -- a b a) [0x47]
+        ;;;
+        ;;; Over
+        ;;;
+        ;;; Duplicates the second value at the top of the stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
@@ -577,48 +1188,99 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)) (local.get $n))
         (br $loop)
 
-        );; EQUr
+        );;
+        ;;; EQUr (a b -- bool8) [0x48]
+        ;;;
+        ;;; Equal
+        ;;;
+        ;;; Pushes 01 to the stack if the two values at the top of the stack are
+        ;;; equal, 00 otherwise.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.eq (local.get $t) (local.get $n)))
         (br $loop)
 
-        );; NEQr
+        );;
+        ;;; NEQr (a b -- bool8) [0x49]
+        ;;;
+        ;;; Not Equal
+        ;;;
+        ;;; Pushes 01 to the stack if the two values at the top of the stack are
+        ;;; not equal, 00 otherwise.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.ne (local.get $t) (local.get $n)))
         (br $loop)
 
-        );; GTHr
+        );;
+        ;;; GTHr (a b -- bool8) [0x4a]
+        ;;;
+        ;;; Greater Than
+        ;;;
+        ;;; Pushes 01 to the stack if the second value at the top of the stack
+        ;;; is greater than the value at the top of the stack, 00 otherwise.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.gt_u (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; LTHr
+        );;
+        ;;; LTHr (a b -- bool8) [0x4b]
+        ;;;
+        ;;; Lesser Than
+        ;;;
+        ;;; Pushes 01 to the stack if the second value at the top of the stack
+        ;;; is lesser than the value at the top of the stack, 00 otherwise.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.lt_u (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; JMPr
+        );;
+        ;;; JMPr (addr -- ) [0x4c]
+        ;;;
+        ;;; Jump
+        ;;;
+        ;;; Moves the PC by a relative distance equal to the signed byte on the
+        ;;; top of the stack, or to an absolute address in short mode.
+        ;;;
         (local.set $t (i32.load8_s offset=0x100100 (local.get $rstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)))
         (local.set $pc (i32.add (local.get $pc) (local.get $t)))
         (br $loop)
 
-        );; JCNr
+        );;
+        ;;; JCNr (cond8 addr -- ) [0x4d]
+        ;;;
+        ;;; Jump Conditional
+        ;;;
+        ;;; If the byte preceeding the address is not 00, moves the PC by a signed
+        ;;; value equal to the byte on the top of the stack, or to an absolute
+        ;;; address in short mode.
+        ;;;
         (local.set $t (i32.load8_s offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)))
         (local.set $pc (i32.add (local.get $pc) (select (local.get $t) (i32.const 0) (local.get $n))))
         (br $loop)
 
-        );; JSRr
+        );;
+        ;;; JSRr (addr -- | ret16) [0x4e]
+        ;;;
+        ;;; Jump Stash Return
+        ;;;
+        ;;; Pushes the PC to the return-stack and moves the PC by a signed value
+        ;;; equal to the byte on the top of the stack, or to an absolute address
+        ;;; in short mode.
+        ;;;
         (local.set $t (i32.load8_s offset=0x100100 (local.get $rstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
@@ -627,56 +1289,120 @@
         (local.set $pc (i32.add (local.get $pc) (local.get $t)))
         (br $loop)
 
-        );; STHr
+        );;
+        ;;; STHr (a -- | a) [0x4f]
+        ;;;
+        ;;; Stash
+        ;;;
+        ;;; Moves the value at the top of the stack to the return stack. Note
+        ;;; that with the r-mode, the stacks are exchanged and the value is moved
+        ;;; from the return stack to the working stack.
+        ;;;
+        ;;; Example:
+        ;;;   LITr 34 STHr  ( 34 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (local.get $t))
         (br $loop)
 
-        );; LDZr
+        );;
+        ;;; LDZr (addr8 -- value) [0x50]
+        ;;;
+        ;;; Load Zero-Page
+        ;;;
+        ;;; Pushes the value at an address within the first 256 bytes of memory,
+        ;;; to the top of the stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.load8_u (local.get $t)))
         (br $loop)
 
-        );; STZr
+        );;
+        ;;; STZr (val addr8 -- ) [0x51]
+        ;;;
+        ;;; Store Zero-Page
+        ;;;
+        ;;; Writes a value to an address within the first 256 bytes of memory.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)))
         (i32.store8 (local.get $t) (local.get $n))
         (br $loop)
 
-        );; LDRr
+        );;
+        ;;; LDRr (addr8 -- value) [0x52]
+        ;;;
+        ;;; Load Relative
+        ;;;
+        ;;; Pushes a value at a relative address in relation to the PC, within
+        ;;; a range between -128 and +127 bytes, to the top of the stack.
+        ;;;
         (local.set $t (i32.load8_s offset=0x100100 (local.get $rstp)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.load8_u (i32.add (local.get $pc) (local.get $t))))
         (br $loop)
 
-        );; STRr
+        );;
+        ;;; STRr (val addr8 -- ) [0x53]
+        ;;;
+        ;;; Store Relative
+        ;;;
+        ;;; Writes a value to a relative address in relation to the PC, within
+        ;;; a range between -128 and +127 bytes.
+        ;;;
         (local.set $t (i32.load8_s offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)))
         (i32.store8 (i32.add (local.get $pc) (local.get $t)) (local.get $n))
         (br $loop)
 
-        );; LDAr
+        );;
+        ;;; LDAr (addr16 -- value) [0x54]
+        ;;;
+        ;;; Load Absolute
+        ;;;
+        ;;; Pushes the value at a absolute address, to the top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.load8_u (local.get $t)))
         (br $loop)
 
-        );; STAr
+        );;
+        ;;; STAr (val addr16 -- ) [0x55]
+        ;;;
+        ;;; Store Absolute
+        ;;;
+        ;;; Writes a value to a absolute address.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff)))
         (i32.store8 (local.get $t) (local.get $n))
         (br $loop)
 
-        );; DEIr
+        );;
+        ;;; DEIr (device8 -- value) [0x56]
+        ;;;
+        ;;; Device Input
+        ;;;
+        ;;; Pushes a value from the device page, to the top of the stack. The
+        ;;; target device might capture the reading to trigger an I/O event.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (i32.store8 offset=0x100100 (local.get $rstp) (call $dei (local.get $t)))
         (br $loop)
 
-        );; DEOr
+        );;
+        ;;; DEOr (val device8 -- ) [0x57]
+        ;;;
+        ;;; Device Output
+        ;;;
+        ;;; Writes a value to the device page. The target device might capture
+        ;;; the writing to trigger an I/O event.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)))
@@ -684,87 +1410,178 @@
         (call $deo (local.get $t) (local.get $n))
         (br $loop)
 
-        );; ADDr
+        );;
+        ;;; ADDr (a b -- a+b) [0x58]
+        ;;;
+        ;;; Add
+        ;;;
+        ;;; Pushes the sum of the two values at the top of the stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.add (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; SUBr
+        );;
+        ;;; SUBr (a b -- a-b) [0x59]
+        ;;;
+        ;;; Subtract
+        ;;;
+        ;;; Pushes the difference of the first value minus the second, to the
+        ;;; top of the stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.sub (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; MULr
+        );;
+        ;;; MULr (a b -- a*b) [0x5a]
+        ;;;
+        ;;; Multiply
+        ;;;
+        ;;; Pushes the product of the first and second values at the top of the
+        ;;; stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.mul (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; DIVr
+        );;
+        ;;; DIVr (a b -- a/b) [0x5b]
+        ;;;
+        ;;; Divide
+        ;;;
+        ;;; Pushes the quotient of the first value over the second, to the top
+        ;;; of the stack. A division by zero pushes zero on the stack. The rounding
+        ;;; direction is toward zero.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (if (result i32) (i32.eqz (local.get $t)) (then (i32.const 0)) (else (i32.div_u (local.get $n) (local.get $t)))))
         (br $loop)
 
-        );; ANDr
+        );;
+        ;;; ANDr (a b -- a&b) [0x5c]
+        ;;;
+        ;;; And
+        ;;;
+        ;;; Pushes the result of the bitwise operation AND, to the top of the
+        ;;; stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.and (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; ORAr
+        );;
+        ;;; ORAr (a b -- a|b) [0x5d]
+        ;;;
+        ;;; Or
+        ;;;
+        ;;; Pushes the result of the bitwise operation OR, to the top of the stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.or (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; EORr
+        );;
+        ;;; EORr (a b -- a^b) [0x5e]
+        ;;;
+        ;;; Exclusive Or
+        ;;;
+        ;;; Pushes the result of the bitwise operation XOR, to the top of the
+        ;;; stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.xor (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; SFTr
+        );;
+        ;;; SFTr (a shift8 -- c) [0x5f]
+        ;;;
+        ;;; Shift
+        ;;;
+        ;;; Shifts the bits of the second value of the stack to the left or right,
+        ;;; depending on the control value at the top of the stack. The high nibble
+        ;;; of the control value indicates how many bits to shift left, and the
+        ;;; low nibble how many bits to shift right. The rightward shift is done
+        ;;; first.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.shl (i32.shr_u (local.get $n) (i32.and (local.get $t) (i32.const 0xf))) (i32.shr_u (local.get $t) (i32.const 4))))
         (br $loop)
 
-        );; JSI
+        );;
+        ;;; JSI ( -- ) [0x60]
+        ;;;
+        ;;; Jump Stash Return Instant
+        ;;;
+        ;;; Pushes PC+2 to the return-stack and moves the PC to a relative address
+        ;;; at a distance equal to the next short in memory. This opcode has no
+        ;;; modes.
+        ;;;
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.and (local.tee $val (local.tee $n (i32.add (local.get $pc) (i32.const 2)))) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (local.set $pc (i32.and (i32.add (local.get $n) (i32.or (i32.shl (i32.load8_u (local.get $pc)) (i32.const 8)) (i32.load8_u (i32.and (i32.add (local.get $pc) (i32.const 1)) (i32.const 0xffff))))) (i32.const 0xffff)))
         (br $loop)
 
-        );; INC2r
+        );;
+        ;;; INC2r (a -- a+1) [0x61]
+        ;;;
+        ;;; Increment
+        ;;;
+        ;;; Increments the value at the top of the stack, by 1.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.and (local.tee $val (i32.add (local.get $t) (i32.const 1))) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; POP2r
+        );;
+        ;;; POP2r (a -- ) [0x62]
+        ;;;
+        ;;; Pop
+        ;;;
+        ;;; Removes the value at the top of the stack.
+        ;;;
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)))
         (br $loop)
 
-        );; NIP2r
+        );;
+        ;;; NIP2r (a b -- b) [0x63]
+        ;;;
+        ;;; Nip
+        ;;;
+        ;;; Removes the second value from the stack. This is practical to convert
+        ;;; a short into a byte.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.and (local.tee $val (local.get $t)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; SWP2r
+        );;
+        ;;; SWP2r (a b -- b a) [0x64]
+        ;;;
+        ;;; Swap
+        ;;;
+        ;;; Exchanges the first and second values at the top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.and (local.tee $val (local.get $n)) (i32.const 0xff)))
@@ -773,7 +1590,14 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; ROT2r
+        );;
+        ;;; ROT2r (a b c -- b c a) [0x65]
+        ;;;
+        ;;; Rotate
+        ;;;
+        ;;; Rotates three values at the top of the stack, to the left, wrapping
+        ;;; around.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $l (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 4)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 5)) (i32.const 0xff))) (i32.const 8))))
@@ -785,7 +1609,13 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 5)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; DUP2r
+        );;
+        ;;; DUP2r (a -- a a) [0x66]
+        ;;;
+        ;;; Duplicate
+        ;;;
+        ;;; Duplicates the value at the top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.and (local.tee $val (local.get $t)) (i32.const 0xff)))
@@ -794,7 +1624,13 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; OVR2r
+        );;
+        ;;; OVR2r (a b -- a b a) [0x67]
+        ;;;
+        ;;; Over
+        ;;;
+        ;;; Duplicates the second value at the top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
@@ -806,48 +1642,99 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 5)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; EQU2r
+        );;
+        ;;; EQU2r (a b -- bool8) [0x68]
+        ;;;
+        ;;; Equal
+        ;;;
+        ;;; Pushes 01 to the stack if the two values at the top of the stack are
+        ;;; equal, 00 otherwise.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.eq (local.get $t) (local.get $n)))
         (br $loop)
 
-        );; NEQ2r
+        );;
+        ;;; NEQ2r (a b -- bool8) [0x69]
+        ;;;
+        ;;; Not Equal
+        ;;;
+        ;;; Pushes 01 to the stack if the two values at the top of the stack are
+        ;;; not equal, 00 otherwise.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.ne (local.get $t) (local.get $n)))
         (br $loop)
 
-        );; GTH2r
+        );;
+        ;;; GTH2r (a b -- bool8) [0x6a]
+        ;;;
+        ;;; Greater Than
+        ;;;
+        ;;; Pushes 01 to the stack if the second value at the top of the stack
+        ;;; is greater than the value at the top of the stack, 00 otherwise.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.gt_u (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; LTH2r
+        );;
+        ;;; LTH2r (a b -- bool8) [0x6b]
+        ;;;
+        ;;; Lesser Than
+        ;;;
+        ;;; Pushes 01 to the stack if the second value at the top of the stack
+        ;;; is lesser than the value at the top of the stack, 00 otherwise.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.lt_u (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; JMP2r
+        );;
+        ;;; JMP2r (addr -- ) [0x6c]
+        ;;;
+        ;;; Jump
+        ;;;
+        ;;; Moves the PC by a relative distance equal to the signed byte on the
+        ;;; top of the stack, or to an absolute address in short mode.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)))
         (local.set $pc (local.get $t))
         (br $loop)
 
-        );; JCN2r
+        );;
+        ;;; JCN2r (cond8 addr -- ) [0x6d]
+        ;;;
+        ;;; Jump Conditional
+        ;;;
+        ;;; If the byte preceeding the address is not 00, moves the PC by a signed
+        ;;; value equal to the byte on the top of the stack, or to an absolute
+        ;;; address in short mode.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff)))
         (local.set $pc (select (local.get $t) (local.get $pc) (local.get $n)))
         (br $loop)
 
-        );; JSR2r
+        );;
+        ;;; JSR2r (addr -- | ret16) [0x6e]
+        ;;;
+        ;;; Jump Stash Return
+        ;;;
+        ;;; Pushes the PC to the return-stack and moves the PC by a signed value
+        ;;; equal to the byte on the top of the stack, or to an absolute address
+        ;;; in short mode.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
@@ -856,7 +1743,15 @@
         (local.set $pc (local.get $t))
         (br $loop)
 
-        );; STH2r
+        );;
+        ;;; STH2r (a -- | a) [0x6f]
+        ;;;
+        ;;; Stash
+        ;;;
+        ;;; Moves the value at the top of the stack to the return stack. Note
+        ;;; that with the r-mode, the stacks are exchanged and the value is moved
+        ;;; from the return stack to the working stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
@@ -864,14 +1759,27 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; LDZ2r
+        );;
+        ;;; LDZ2r (addr8 -- value) [0x70]
+        ;;;
+        ;;; Load Zero-Page
+        ;;;
+        ;;; Pushes the value at an address within the first 256 bytes of memory,
+        ;;; to the top of the stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.get $t)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.load8_u (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xff))))
         (br $loop)
 
-        );; STZ2r
+        );;
+        ;;; STZ2r (val addr8 -- ) [0x71]
+        ;;;
+        ;;; Store Zero-Page
+        ;;;
+        ;;; Writes a value to an address within the first 256 bytes of memory.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $l (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))))
@@ -880,14 +1788,28 @@
         (i32.store8 (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xff)) (local.get $n))
         (br $loop)
 
-        );; LDR2r
+        );;
+        ;;; LDR2r (addr8 -- value) [0x72]
+        ;;;
+        ;;; Load Relative
+        ;;;
+        ;;; Pushes a value at a relative address in relation to the PC, within
+        ;;; a range between -128 and +127 bytes, to the top of the stack.
+        ;;;
         (local.set $t (i32.load8_s offset=0x100100 (local.get $rstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.tee $mval (i32.add (local.get $pc) (local.get $t)))))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.load8_u (i32.and (i32.add (local.get $mval) (i32.const 1)) (i32.const 0xffff))))
         (br $loop)
 
-        );; STR2r
+        );;
+        ;;; STR2r (val addr8 -- ) [0x73]
+        ;;;
+        ;;; Store Relative
+        ;;;
+        ;;; Writes a value to a relative address in relation to the PC, within
+        ;;; a range between -128 and +127 bytes.
+        ;;;
         (local.set $t (i32.load8_s offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $l (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))))
@@ -896,13 +1818,25 @@
         (i32.store8 (i32.and (i32.add (local.get $mval) (i32.const 1)) (i32.const 0xffff)) (local.get $n))
         (br $loop)
 
-        );; LDA2r
+        );;
+        ;;; LDA2r (addr16 -- value) [0x74]
+        ;;;
+        ;;; Load Absolute
+        ;;;
+        ;;; Pushes the value at a absolute address, to the top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.get $t)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.load8_u (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xffff))))
         (br $loop)
 
-        );; STA2r
+        );;
+        ;;; STA2r (val addr16 -- ) [0x75]
+        ;;;
+        ;;; Store Absolute
+        ;;;
+        ;;; Writes a value to a absolute address.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))))
         (local.set $l (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))))
@@ -911,14 +1845,28 @@
         (i32.store8 (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xffff)) (local.get $n))
         (br $loop)
 
-        );; DEI2r
+        );;
+        ;;; DEI2r (device8 -- value) [0x76]
+        ;;;
+        ;;; Device Input
+        ;;;
+        ;;; Pushes a value from the device page, to the top of the stack. The
+        ;;; target device might capture the reading to trigger an I/O event.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (call $dei (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xff))))
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (call $dei (local.get $t)))
         (br $loop)
 
-        );; DEO2r
+        );;
+        ;;; DEO2r (val device8 -- ) [0x77]
+        ;;;
+        ;;; Device Output
+        ;;;
+        ;;; Writes a value to the device page. The target device might capture
+        ;;; the writing to trigger an I/O event.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $l (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))))
@@ -929,7 +1877,13 @@
         (call $deo (local.get $t) (local.get $n))
         (br $loop)
 
-        );; ADD2r
+        );;
+        ;;; ADD2r (a b -- a+b) [0x78]
+        ;;;
+        ;;; Add
+        ;;;
+        ;;; Pushes the sum of the two values at the top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)))
@@ -937,7 +1891,14 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; SUB2r
+        );;
+        ;;; SUB2r (a b -- a-b) [0x79]
+        ;;;
+        ;;; Subtract
+        ;;;
+        ;;; Pushes the difference of the first value minus the second, to the
+        ;;; top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)))
@@ -945,7 +1906,14 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; MUL2r
+        );;
+        ;;; MUL2r (a b -- a*b) [0x7a]
+        ;;;
+        ;;; Multiply
+        ;;;
+        ;;; Pushes the product of the first and second values at the top of the
+        ;;; stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)))
@@ -953,7 +1921,15 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; DIV2r
+        );;
+        ;;; DIV2r (a b -- a/b) [0x7b]
+        ;;;
+        ;;; Divide
+        ;;;
+        ;;; Pushes the quotient of the first value over the second, to the top
+        ;;; of the stack. A division by zero pushes zero on the stack. The rounding
+        ;;; direction is toward zero.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)))
@@ -961,7 +1937,14 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; AND2r
+        );;
+        ;;; AND2r (a b -- a&b) [0x7c]
+        ;;;
+        ;;; And
+        ;;;
+        ;;; Pushes the result of the bitwise operation AND, to the top of the
+        ;;; stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)))
@@ -969,7 +1952,13 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; ORA2r
+        );;
+        ;;; ORA2r (a b -- a|b) [0x7d]
+        ;;;
+        ;;; Or
+        ;;;
+        ;;; Pushes the result of the bitwise operation OR, to the top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)))
@@ -977,7 +1966,14 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; EOR2r
+        );;
+        ;;; EOR2r (a b -- a^b) [0x7e]
+        ;;;
+        ;;; Exclusive Or
+        ;;;
+        ;;; Pushes the result of the bitwise operation XOR, to the top of the
+        ;;; stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)))
@@ -985,7 +1981,17 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; SFT2r
+        );;
+        ;;; SFT2r (a shift8 -- c) [0x7f]
+        ;;;
+        ;;; Shift
+        ;;;
+        ;;; Shifts the bits of the second value of the stack to the left or right,
+        ;;; depending on the control value at the top of the stack. The high nibble
+        ;;; of the control value indicates how many bits to shift left, and the
+        ;;; low nibble how many bits to shift right. The rightward shift is done
+        ;;; first.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)))
@@ -993,28 +1999,67 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; LIT
+        );;
+        ;;; LIT ( --  a) [0x80]
+        ;;;
+        ;;; Literal
+        ;;;
+        ;;; Pushes the next bytes in memory, and moves the PC+2. The LIT opcode
+        ;;; always has the keep mode active. Notice how the 0x00 opcode, with
+        ;;; the keep bit toggled, is the location of the literal opcodes.
+        ;;;
+        ;;; Example:
+        ;;;   LIT 12          ( 12 )
+        ;;;
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.load8_u (local.get $pc)))
         (local.set $pc (i32.add (local.get $pc) (i32.const 1)))
         (br $loop)
 
-        );; INCk
+        );;
+        ;;; INCk (a -- a a+1) [0x81]
+        ;;;
+        ;;; Increment
+        ;;;
+        ;;; Increments the value at the top of the stack, by 1.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.add (local.get $t) (i32.const 1)))
         (br $loop)
 
-        );; POPk
+        );;
+        ;;; POPk (a -- a ) [0x82]
+        ;;;
+        ;;; Pop
+        ;;;
+        ;;; Removes the value at the top of the stack.
+        ;;;
         (br $loop)
 
-        );; NIPk
+        );;
+        ;;; NIPk (a b -- a b b) [0x83]
+        ;;;
+        ;;; Nip
+        ;;;
+        ;;; Removes the second value from the stack. This is practical to convert
+        ;;; a short into a byte.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (local.get $t))
         (br $loop)
 
-        );; SWPk
+        );;
+        ;;; SWPk (a b -- a b b a) [0x84]
+        ;;;
+        ;;; Swap
+        ;;;
+        ;;; Exchanges the first and second values at the top of the stack.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 SWPk         ( 12 34 34 12 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
@@ -1022,7 +2067,17 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (local.get $t))
         (br $loop)
 
-        );; ROTk
+        );;
+        ;;; ROTk (a b c -- a b c b c a) [0x85]
+        ;;;
+        ;;; Rotate
+        ;;;
+        ;;; Rotates three values at the top of the stack, to the left, wrapping
+        ;;; around.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 #56 ROTk           ( 12 34 56 34 56 12 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $l (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))))
@@ -1032,14 +2087,32 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)) (local.get $n))
         (br $loop)
 
-        );; DUPk
+        );;
+        ;;; DUPk (a -- a a a) [0x86]
+        ;;;
+        ;;; Duplicate
+        ;;;
+        ;;; Duplicates the value at the top of the stack.
+        ;;;
+        ;;; Example:
+        ;;;   #12 DUPk    ( 12 12 12 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (local.get $t))
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (local.get $t))
         (br $loop)
 
-        );; OVRk
+        );;
+        ;;; OVRk (a b -- a b a b a) [0x87]
+        ;;;
+        ;;; Over
+        ;;;
+        ;;; Duplicates the second value at the top of the stack.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 OVRk         ( 12 34 12 34 12 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 253)) (i32.const 0xff)))
@@ -1048,46 +2121,109 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff)) (local.get $n))
         (br $loop)
 
-        );; EQUk
+        );;
+        ;;; EQUk (a b -- a b bool8) [0x88]
+        ;;;
+        ;;; Equal
+        ;;;
+        ;;; Pushes 01 to the stack if the two values at the top of the stack are
+        ;;; equal, 00 otherwise.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 EQUk         ( 12 34 00 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.eq (local.get $t) (local.get $n)))
         (br $loop)
 
-        );; NEQk
+        );;
+        ;;; NEQk (a b -- a b bool8) [0x89]
+        ;;;
+        ;;; Not Equal
+        ;;;
+        ;;; Pushes 01 to the stack if the two values at the top of the stack are
+        ;;; not equal, 00 otherwise.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 NEQk         ( 12 34 01 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.ne (local.get $t) (local.get $n)))
         (br $loop)
 
-        );; GTHk
+        );;
+        ;;; GTHk (a b -- a b bool8) [0x8a]
+        ;;;
+        ;;; Greater Than
+        ;;;
+        ;;; Pushes 01 to the stack if the second value at the top of the stack
+        ;;; is greater than the value at the top of the stack, 00 otherwise.
+        ;;;
+        ;;; Example:
+        ;;;   #3412 GTHk         ( 34 12 01 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.gt_u (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; LTHk
+        );;
+        ;;; LTHk (a b -- a b bool8) [0x8b]
+        ;;;
+        ;;; Lesser Than
+        ;;;
+        ;;; Pushes 01 to the stack if the second value at the top of the stack
+        ;;; is lesser than the value at the top of the stack, 00 otherwise.
+        ;;;
+        ;;; Example:
+        ;;;   #0100 LTHk         ( 01 00 00 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.lt_u (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; JMPk
+        );;
+        ;;; JMPk (addr -- addr ) [0x8c]
+        ;;;
+        ;;; Jump
+        ;;;
+        ;;; Moves the PC by a relative distance equal to the signed byte on the
+        ;;; top of the stack, or to an absolute address in short mode.
+        ;;;
         (local.set $t (i32.load8_s offset=0x100000 (local.get $wstp)))
         (local.set $pc (i32.add (local.get $pc) (local.get $t)))
         (br $loop)
 
-        );; JCNk
+        );;
+        ;;; JCNk (cond8 addr -- cond8 addr ) [0x8d]
+        ;;;
+        ;;; Jump Conditional
+        ;;;
+        ;;; If the byte preceeding the address is not 00, moves the PC by a signed
+        ;;; value equal to the byte on the top of the stack, or to an absolute
+        ;;; address in short mode.
+        ;;;
         (local.set $t (i32.load8_s offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $pc (i32.add (local.get $pc) (select (local.get $t) (i32.const 0) (local.get $n))))
         (br $loop)
 
-        );; JSRk
+        );;
+        ;;; JSRk (addr -- addr | ret16) [0x8e]
+        ;;;
+        ;;; Jump Stash Return
+        ;;;
+        ;;; Pushes the PC to the return-stack and moves the PC by a signed value
+        ;;; equal to the byte on the top of the stack, or to an absolute address
+        ;;; in short mode.
+        ;;;
         (local.set $t (i32.load8_s offset=0x100000 (local.get $wstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.and (local.tee $val (local.get $pc)) (i32.const 0xff)))
@@ -1095,142 +2231,318 @@
         (local.set $pc (i32.add (local.get $pc) (local.get $t)))
         (br $loop)
 
-        );; STHk
+        );;
+        ;;; STHk (a -- a | a) [0x8f]
+        ;;;
+        ;;; Stash
+        ;;;
+        ;;; Moves the value at the top of the stack to the return stack. Note
+        ;;; that with the r-mode, the stacks are exchanged and the value is moved
+        ;;; from the return stack to the working stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (local.get $t))
         (br $loop)
 
-        );; LDZk
+        );;
+        ;;; LDZk (addr8 -- addr8 value) [0x90]
+        ;;;
+        ;;; Load Zero-Page
+        ;;;
+        ;;; Pushes the value at an address within the first 256 bytes of memory,
+        ;;; to the top of the stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.load8_u (local.get $t)))
         (br $loop)
 
-        );; STZk
+        );;
+        ;;; STZk (val addr8 -- val addr8 ) [0x91]
+        ;;;
+        ;;; Store Zero-Page
+        ;;;
+        ;;; Writes a value to an address within the first 256 bytes of memory.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (i32.store8 (local.get $t) (local.get $n))
         (br $loop)
 
-        );; LDRk
+        );;
+        ;;; LDRk (addr8 -- addr8 value) [0x92]
+        ;;;
+        ;;; Load Relative
+        ;;;
+        ;;; Pushes a value at a relative address in relation to the PC, within
+        ;;; a range between -128 and +127 bytes, to the top of the stack.
+        ;;;
         (local.set $t (i32.load8_s offset=0x100000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.load8_u (i32.add (local.get $pc) (local.get $t))))
         (br $loop)
 
-        );; STRk
+        );;
+        ;;; STRk (val addr8 -- val addr8 ) [0x93]
+        ;;;
+        ;;; Store Relative
+        ;;;
+        ;;; Writes a value to a relative address in relation to the PC, within
+        ;;; a range between -128 and +127 bytes.
+        ;;;
         (local.set $t (i32.load8_s offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (i32.store8 (i32.add (local.get $pc) (local.get $t)) (local.get $n))
         (br $loop)
 
-        );; LDAk
+        );;
+        ;;; LDAk (addr16 -- addr16 value) [0x94]
+        ;;;
+        ;;; Load Absolute
+        ;;;
+        ;;; Pushes the value at a absolute address, to the top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.load8_u (local.get $t)))
         (br $loop)
 
-        );; STAk
+        );;
+        ;;; STAk (val addr16 -- val addr16 ) [0x95]
+        ;;;
+        ;;; Store Absolute
+        ;;;
+        ;;; Writes a value to a absolute address.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))))
         (i32.store8 (local.get $t) (local.get $n))
         (br $loop)
 
-        );; DEIk
+        );;
+        ;;; DEIk (device8 -- device8 value) [0x96]
+        ;;;
+        ;;; Device Input
+        ;;;
+        ;;; Pushes a value from the device page, to the top of the stack. The
+        ;;; target device might capture the reading to trigger an I/O event.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (call $dei (local.get $t)))
         (br $loop)
 
-        );; DEOk
+        );;
+        ;;; DEOk (val device8 -- val device8 ) [0x97]
+        ;;;
+        ;;; Device Output
+        ;;;
+        ;;; Writes a value to the device page. The target device might capture
+        ;;; the writing to trigger an I/O event.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (i32.store8 offset=0x100200 (local.get $t) (local.get $n))
         (call $deo (local.get $t) (local.get $n))
         (br $loop)
 
-        );; ADDk
+        );;
+        ;;; ADDk (a b -- a b a+b) [0x98]
+        ;;;
+        ;;; Add
+        ;;;
+        ;;; Pushes the sum of the two values at the top of the stack.
+        ;;;
+        ;;; Example:
+        ;;;   #02 #5d ADDk      ( 02 5d 5f )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.add (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; SUBk
+        );;
+        ;;; SUBk (a b -- a b a-b) [0x99]
+        ;;;
+        ;;; Subtract
+        ;;;
+        ;;; Pushes the difference of the first value minus the second, to the
+        ;;; top of the stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.sub (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; MULk
+        );;
+        ;;; MULk (a b -- a b a*b) [0x9a]
+        ;;;
+        ;;; Multiply
+        ;;;
+        ;;; Pushes the product of the first and second values at the top of the
+        ;;; stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.mul (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; DIVk
+        );;
+        ;;; DIVk (a b -- a b a/b) [0x9b]
+        ;;;
+        ;;; Divide
+        ;;;
+        ;;; Pushes the quotient of the first value over the second, to the top
+        ;;; of the stack. A division by zero pushes zero on the stack. The rounding
+        ;;; direction is toward zero.
+        ;;;
+        ;;; Example:
+        ;;;   #10 #03 DIVk      ( 10 03 05 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (if (result i32) (i32.eqz (local.get $t)) (then (i32.const 0)) (else (i32.div_u (local.get $n) (local.get $t)))))
         (br $loop)
 
-        );; ANDk
+        );;
+        ;;; ANDk (a b -- a b a&b) [0x9c]
+        ;;;
+        ;;; And
+        ;;;
+        ;;; Pushes the result of the bitwise operation AND, to the top of the
+        ;;; stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.and (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; ORAk
+        );;
+        ;;; ORAk (a b -- a b a|b) [0x9d]
+        ;;;
+        ;;; Or
+        ;;;
+        ;;; Pushes the result of the bitwise operation OR, to the top of the stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.or (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; EORk
+        );;
+        ;;; EORk (a b -- a b a^b) [0x9e]
+        ;;;
+        ;;; Exclusive Or
+        ;;;
+        ;;; Pushes the result of the bitwise operation XOR, to the top of the
+        ;;; stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.xor (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; SFTk
+        );;
+        ;;; SFTk (a shift8 -- a shift8 c) [0x9f]
+        ;;;
+        ;;; Shift
+        ;;;
+        ;;; Shifts the bits of the second value of the stack to the left or right,
+        ;;; depending on the control value at the top of the stack. The high nibble
+        ;;; of the control value indicates how many bits to shift left, and the
+        ;;; low nibble how many bits to shift right. The rightward shift is done
+        ;;; first.
+        ;;;
+        ;;; Example:
+        ;;;   #34 #33 SFTk       ( 34 33 30 )
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.shl (i32.shr_u (local.get $n) (i32.and (local.get $t) (i32.const 0xf))) (i32.shr_u (local.get $t) (i32.const 4))))
         (br $loop)
 
-        );; LIT2
+        );;
+        ;;; LIT2 ( --  a) [0xa0]
+        ;;;
+        ;;; Literal
+        ;;;
+        ;;; Pushes the next bytes in memory, and moves the PC+2. The LIT opcode
+        ;;; always has the keep mode active. Notice how the 0x00 opcode, with
+        ;;; the keep bit toggled, is the location of the literal opcodes.
+        ;;;
+        ;;; Example:
+        ;;;   LIT2 abcd       ( ab cd )
+        ;;;
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.get $pc)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.load8_u (i32.and (i32.add (local.get $pc) (i32.const 1)) (i32.const 0xffff))))
         (local.set $pc (i32.add (local.get $pc) (i32.const 2)))
         (br $loop)
 
-        );; INC2k
+        );;
+        ;;; INC2k (a -- a a+1) [0xa1]
+        ;;;
+        ;;; Increment
+        ;;;
+        ;;; Increments the value at the top of the stack, by 1.
+        ;;;
+        ;;; Example:
+        ;;;   #0001 INC2k     ( 00 01 00 02 )
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.and (local.tee $val (i32.add (local.get $t) (i32.const 1))) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; POP2k
+        );;
+        ;;; POP2k (a -- a ) [0xa2]
+        ;;;
+        ;;; Pop
+        ;;;
+        ;;; Removes the value at the top of the stack.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 POP2k  ( 12 34 )
+        ;;;
         (br $loop)
 
-        );; NIP2k
+        );;
+        ;;; NIP2k (a b -- a b b) [0xa3]
+        ;;;
+        ;;; Nip
+        ;;;
+        ;;; Removes the second value from the stack. This is practical to convert
+        ;;; a short into a byte.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 #5678 NIP2k  ( 12 34 56 78 56 78 )
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.and (local.tee $val (local.get $t)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; SWP2k
+        );;
+        ;;; SWP2k (a b -- a b b a) [0xa4]
+        ;;;
+        ;;; Swap
+        ;;;
+        ;;; Exchanges the first and second values at the top of the stack.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 #5678 SWP2k  ( 12 34 56 78 56 78 12 34 )
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 252)) (i32.const 0xff)))
@@ -1240,7 +2552,17 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; ROT2k
+        );;
+        ;;; ROT2k (a b c -- a b c b c a) [0xa5]
+        ;;;
+        ;;; Rotate
+        ;;;
+        ;;; Rotates three values at the top of the stack, to the left, wrapping
+        ;;; around.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 #5678 #9abc ROT2k  ( 12 34 56 78 9a bc 56 78 9a bc 12 34 )
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $l (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 4)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 5)) (i32.const 0xff))) (i32.const 8))))
@@ -1253,7 +2575,13 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 5)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; DUP2k
+        );;
+        ;;; DUP2k (a -- a a a) [0xa6]
+        ;;;
+        ;;; Duplicate
+        ;;;
+        ;;; Duplicates the value at the top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 252)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.and (local.tee $val (local.get $t)) (i32.const 0xff)))
@@ -1262,7 +2590,16 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; OVR2k
+        );;
+        ;;; OVR2k (a b -- a b a b a) [0xa7]
+        ;;;
+        ;;; Over
+        ;;;
+        ;;; Duplicates the second value at the top of the stack.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 #5678 OVR2k  ( 12 34 56 78 12 34 56 78 12 34 )
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 250)) (i32.const 0xff)))
@@ -1274,46 +2611,109 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 5)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; EQU2k
+        );;
+        ;;; EQU2k (a b -- a b bool8) [0xa8]
+        ;;;
+        ;;; Equal
+        ;;;
+        ;;; Pushes 01 to the stack if the two values at the top of the stack are
+        ;;; equal, 00 otherwise.
+        ;;;
+        ;;; Example:
+        ;;;   #abcd #abcd EQU2k  ( ab cd ab cd 01 )
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.eq (local.get $t) (local.get $n)))
         (br $loop)
 
-        );; NEQ2k
+        );;
+        ;;; NEQ2k (a b -- a b bool8) [0xa9]
+        ;;;
+        ;;; Not Equal
+        ;;;
+        ;;; Pushes 01 to the stack if the two values at the top of the stack are
+        ;;; not equal, 00 otherwise.
+        ;;;
+        ;;; Example:
+        ;;;   #abcd #abcd NEQ2k  ( ab cd ab cd 00 )
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.ne (local.get $t) (local.get $n)))
         (br $loop)
 
-        );; GTH2k
+        );;
+        ;;; GTH2k (a b -- a b bool8) [0xaa]
+        ;;;
+        ;;; Greater Than
+        ;;;
+        ;;; Pushes 01 to the stack if the second value at the top of the stack
+        ;;; is greater than the value at the top of the stack, 00 otherwise.
+        ;;;
+        ;;; Example:
+        ;;;   #1234 #3456 GTH2k  ( 12 34 34 56 00 )
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.gt_u (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; LTH2k
+        );;
+        ;;; LTH2k (a b -- a b bool8) [0xab]
+        ;;;
+        ;;; Lesser Than
+        ;;;
+        ;;; Pushes 01 to the stack if the second value at the top of the stack
+        ;;; is lesser than the value at the top of the stack, 00 otherwise.
+        ;;;
+        ;;; Example:
+        ;;;   #0001 #0000 LTH2k  ( 00 01 00 00 00 )
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.lt_u (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; JMP2k
+        );;
+        ;;; JMP2k (addr -- addr ) [0xac]
+        ;;;
+        ;;; Jump
+        ;;;
+        ;;; Moves the PC by a relative distance equal to the signed byte on the
+        ;;; top of the stack, or to an absolute address in short mode.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $pc (local.get $t))
         (br $loop)
 
-        );; JCN2k
+        );;
+        ;;; JCN2k (cond8 addr -- cond8 addr ) [0xad]
+        ;;;
+        ;;; Jump Conditional
+        ;;;
+        ;;; If the byte preceeding the address is not 00, moves the PC by a signed
+        ;;; value equal to the byte on the top of the stack, or to an absolute
+        ;;; address in short mode.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))))
         (local.set $pc (select (local.get $t) (local.get $pc) (local.get $n)))
         (br $loop)
 
-        );; JSR2k
+        );;
+        ;;; JSR2k (addr -- addr | ret16) [0xae]
+        ;;;
+        ;;; Jump Stash Return
+        ;;;
+        ;;; Pushes the PC to the return-stack and moves the PC by a signed value
+        ;;; equal to the byte on the top of the stack, or to an absolute address
+        ;;; in short mode.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.and (local.tee $val (local.get $pc)) (i32.const 0xff)))
@@ -1321,21 +2721,42 @@
         (local.set $pc (local.get $t))
         (br $loop)
 
-        );; STH2k
+        );;
+        ;;; STH2k (a -- a | a) [0xaf]
+        ;;;
+        ;;; Stash
+        ;;;
+        ;;; Moves the value at the top of the stack to the return stack. Note
+        ;;; that with the r-mode, the stacks are exchanged and the value is moved
+        ;;; from the return stack to the working stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.and (local.tee $val (local.get $t)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; LDZ2k
+        );;
+        ;;; LDZ2k (addr8 -- addr8 value) [0xb0]
+        ;;;
+        ;;; Load Zero-Page
+        ;;;
+        ;;; Pushes the value at an address within the first 256 bytes of memory,
+        ;;; to the top of the stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.get $t)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.load8_u (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xff))))
         (br $loop)
 
-        );; STZ2k
+        );;
+        ;;; STZ2k (val addr8 -- val addr8 ) [0xb1]
+        ;;;
+        ;;; Store Zero-Page
+        ;;;
+        ;;; Writes a value to an address within the first 256 bytes of memory.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $l (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))))
@@ -1343,14 +2764,28 @@
         (i32.store8 (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xff)) (local.get $n))
         (br $loop)
 
-        );; LDR2k
+        );;
+        ;;; LDR2k (addr8 -- addr8 value) [0xb2]
+        ;;;
+        ;;; Load Relative
+        ;;;
+        ;;; Pushes a value at a relative address in relation to the PC, within
+        ;;; a range between -128 and +127 bytes, to the top of the stack.
+        ;;;
         (local.set $t (i32.load8_s offset=0x100000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.tee $mval (i32.add (local.get $pc) (local.get $t)))))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.load8_u (i32.and (i32.add (local.get $mval) (i32.const 1)) (i32.const 0xffff))))
         (br $loop)
 
-        );; STR2k
+        );;
+        ;;; STR2k (val addr8 -- val addr8 ) [0xb3]
+        ;;;
+        ;;; Store Relative
+        ;;;
+        ;;; Writes a value to a relative address in relation to the PC, within
+        ;;; a range between -128 and +127 bytes.
+        ;;;
         (local.set $t (i32.load8_s offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $l (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))))
@@ -1358,14 +2793,26 @@
         (i32.store8 (i32.and (i32.add (local.get $mval) (i32.const 1)) (i32.const 0xffff)) (local.get $n))
         (br $loop)
 
-        );; LDA2k
+        );;
+        ;;; LDA2k (addr16 -- addr16 value) [0xb4]
+        ;;;
+        ;;; Load Absolute
+        ;;;
+        ;;; Pushes the value at a absolute address, to the top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.get $t)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.load8_u (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xffff))))
         (br $loop)
 
-        );; STA2k
+        );;
+        ;;; STA2k (val addr16 -- val addr16 ) [0xb5]
+        ;;;
+        ;;; Store Absolute
+        ;;;
+        ;;; Writes a value to a absolute address.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))))
         (local.set $l (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))))
@@ -1373,14 +2820,28 @@
         (i32.store8 (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xffff)) (local.get $n))
         (br $loop)
 
-        );; DEI2k
+        );;
+        ;;; DEI2k (device8 -- device8 value) [0xb6]
+        ;;;
+        ;;; Device Input
+        ;;;
+        ;;; Pushes a value from the device page, to the top of the stack. The
+        ;;; target device might capture the reading to trigger an I/O event.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (call $dei (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xff))))
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (call $dei (local.get $t)))
         (br $loop)
 
-        );; DEO2k
+        );;
+        ;;; DEO2k (val device8 -- val device8 ) [0xb7]
+        ;;;
+        ;;; Device Output
+        ;;;
+        ;;; Writes a value to the device page. The target device might capture
+        ;;; the writing to trigger an I/O event.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $l (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))))
@@ -1390,7 +2851,13 @@
         (call $deo (local.get $t) (local.get $n))
         (br $loop)
 
-        );; ADD2k
+        );;
+        ;;; ADD2k (a b -- a b a+b) [0xb8]
+        ;;;
+        ;;; Add
+        ;;;
+        ;;; Pushes the sum of the two values at the top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
@@ -1398,7 +2865,14 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; SUB2k
+        );;
+        ;;; SUB2k (a b -- a b a-b) [0xb9]
+        ;;;
+        ;;; Subtract
+        ;;;
+        ;;; Pushes the difference of the first value minus the second, to the
+        ;;; top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
@@ -1406,7 +2880,14 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; MUL2k
+        );;
+        ;;; MUL2k (a b -- a b a*b) [0xba]
+        ;;;
+        ;;; Multiply
+        ;;;
+        ;;; Pushes the product of the first and second values at the top of the
+        ;;; stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
@@ -1414,7 +2895,15 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; DIV2k
+        );;
+        ;;; DIV2k (a b -- a b a/b) [0xbb]
+        ;;;
+        ;;; Divide
+        ;;;
+        ;;; Pushes the quotient of the first value over the second, to the top
+        ;;; of the stack. A division by zero pushes zero on the stack. The rounding
+        ;;; direction is toward zero.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
@@ -1422,7 +2911,14 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; AND2k
+        );;
+        ;;; AND2k (a b -- a b a&b) [0xbc]
+        ;;;
+        ;;; And
+        ;;;
+        ;;; Pushes the result of the bitwise operation AND, to the top of the
+        ;;; stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
@@ -1430,7 +2926,13 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; ORA2k
+        );;
+        ;;; ORA2k (a b -- a b a|b) [0xbd]
+        ;;;
+        ;;; Or
+        ;;;
+        ;;; Pushes the result of the bitwise operation OR, to the top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
@@ -1438,7 +2940,14 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; EOR2k
+        );;
+        ;;; EOR2k (a b -- a b a^b) [0xbe]
+        ;;;
+        ;;; Exclusive Or
+        ;;;
+        ;;; Pushes the result of the bitwise operation XOR, to the top of the
+        ;;; stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100000 (local.get $wstp)) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
@@ -1446,7 +2955,17 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; SFT2k
+        );;
+        ;;; SFT2k (a shift8 -- a shift8 c) [0xbf]
+        ;;;
+        ;;; Shift
+        ;;;
+        ;;; Shifts the bits of the second value of the stack to the left or right,
+        ;;; depending on the control value at the top of the stack. The high nibble
+        ;;; of the control value indicates how many bits to shift left, and the
+        ;;; low nibble how many bits to shift right. The rightward shift is done
+        ;;; first.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100000 (local.get $wstp)))
         (local.set $n (i32.or (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 2)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
@@ -1454,28 +2973,61 @@
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; LITr
+        );;
+        ;;; LITr ( --  a) [0xc0]
+        ;;;
+        ;;; Literal
+        ;;;
+        ;;; Pushes the next bytes in memory, and moves the PC+2. The LIT opcode
+        ;;; always has the keep mode active. Notice how the 0x00 opcode, with
+        ;;; the keep bit toggled, is the location of the literal opcodes.
+        ;;;
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.load8_u (local.get $pc)))
         (local.set $pc (i32.add (local.get $pc) (i32.const 1)))
         (br $loop)
 
-        );; INCkr
+        );;
+        ;;; INCkr (a -- a a+1) [0xc1]
+        ;;;
+        ;;; Increment
+        ;;;
+        ;;; Increments the value at the top of the stack, by 1.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.add (local.get $t) (i32.const 1)))
         (br $loop)
 
-        );; POPkr
+        );;
+        ;;; POPkr (a -- a ) [0xc2]
+        ;;;
+        ;;; Pop
+        ;;;
+        ;;; Removes the value at the top of the stack.
+        ;;;
         (br $loop)
 
-        );; NIPkr
+        );;
+        ;;; NIPkr (a b -- a b b) [0xc3]
+        ;;;
+        ;;; Nip
+        ;;;
+        ;;; Removes the second value from the stack. This is practical to convert
+        ;;; a short into a byte.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (local.get $t))
         (br $loop)
 
-        );; SWPkr
+        );;
+        ;;; SWPkr (a b -- a b b a) [0xc4]
+        ;;;
+        ;;; Swap
+        ;;;
+        ;;; Exchanges the first and second values at the top of the stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
@@ -1483,7 +3035,14 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (local.get $t))
         (br $loop)
 
-        );; ROTkr
+        );;
+        ;;; ROTkr (a b c -- a b c b c a) [0xc5]
+        ;;;
+        ;;; Rotate
+        ;;;
+        ;;; Rotates three values at the top of the stack, to the left, wrapping
+        ;;; around.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $l (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))))
@@ -1493,14 +3052,26 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)) (local.get $n))
         (br $loop)
 
-        );; DUPkr
+        );;
+        ;;; DUPkr (a -- a a a) [0xc6]
+        ;;;
+        ;;; Duplicate
+        ;;;
+        ;;; Duplicates the value at the top of the stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (local.get $t))
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (local.get $t))
         (br $loop)
 
-        );; OVRkr
+        );;
+        ;;; OVRkr (a b -- a b a b a) [0xc7]
+        ;;;
+        ;;; Over
+        ;;;
+        ;;; Duplicates the second value at the top of the stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 253)) (i32.const 0xff)))
@@ -1509,46 +3080,97 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff)) (local.get $n))
         (br $loop)
 
-        );; EQUkr
+        );;
+        ;;; EQUkr (a b -- a b bool8) [0xc8]
+        ;;;
+        ;;; Equal
+        ;;;
+        ;;; Pushes 01 to the stack if the two values at the top of the stack are
+        ;;; equal, 00 otherwise.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.eq (local.get $t) (local.get $n)))
         (br $loop)
 
-        );; NEQkr
+        );;
+        ;;; NEQkr (a b -- a b bool8) [0xc9]
+        ;;;
+        ;;; Not Equal
+        ;;;
+        ;;; Pushes 01 to the stack if the two values at the top of the stack are
+        ;;; not equal, 00 otherwise.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.ne (local.get $t) (local.get $n)))
         (br $loop)
 
-        );; GTHkr
+        );;
+        ;;; GTHkr (a b -- a b bool8) [0xca]
+        ;;;
+        ;;; Greater Than
+        ;;;
+        ;;; Pushes 01 to the stack if the second value at the top of the stack
+        ;;; is greater than the value at the top of the stack, 00 otherwise.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.gt_u (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; LTHkr
+        );;
+        ;;; LTHkr (a b -- a b bool8) [0xcb]
+        ;;;
+        ;;; Lesser Than
+        ;;;
+        ;;; Pushes 01 to the stack if the second value at the top of the stack
+        ;;; is lesser than the value at the top of the stack, 00 otherwise.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.lt_u (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; JMPkr
+        );;
+        ;;; JMPkr (addr -- addr ) [0xcc]
+        ;;;
+        ;;; Jump
+        ;;;
+        ;;; Moves the PC by a relative distance equal to the signed byte on the
+        ;;; top of the stack, or to an absolute address in short mode.
+        ;;;
         (local.set $t (i32.load8_s offset=0x100100 (local.get $rstp)))
         (local.set $pc (i32.add (local.get $pc) (local.get $t)))
         (br $loop)
 
-        );; JCNkr
+        );;
+        ;;; JCNkr (cond8 addr -- cond8 addr ) [0xcd]
+        ;;;
+        ;;; Jump Conditional
+        ;;;
+        ;;; If the byte preceeding the address is not 00, moves the PC by a signed
+        ;;; value equal to the byte on the top of the stack, or to an absolute
+        ;;; address in short mode.
+        ;;;
         (local.set $t (i32.load8_s offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $pc (i32.add (local.get $pc) (select (local.get $t) (i32.const 0) (local.get $n))))
         (br $loop)
 
-        );; JSRkr
+        );;
+        ;;; JSRkr (addr -- addr | ret16) [0xce]
+        ;;;
+        ;;; Jump Stash Return
+        ;;;
+        ;;; Pushes the PC to the return-stack and moves the PC by a signed value
+        ;;; equal to the byte on the top of the stack, or to an absolute address
+        ;;; in short mode.
+        ;;;
         (local.set $t (i32.load8_s offset=0x100100 (local.get $rstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.and (local.tee $val (local.get $pc)) (i32.const 0xff)))
@@ -1556,142 +3178,294 @@
         (local.set $pc (i32.add (local.get $pc) (local.get $t)))
         (br $loop)
 
-        );; STHkr
+        );;
+        ;;; STHkr (a -- a | a) [0xcf]
+        ;;;
+        ;;; Stash
+        ;;;
+        ;;; Moves the value at the top of the stack to the return stack. Note
+        ;;; that with the r-mode, the stacks are exchanged and the value is moved
+        ;;; from the return stack to the working stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (local.get $t))
         (br $loop)
 
-        );; LDZkr
+        );;
+        ;;; LDZkr (addr8 -- addr8 value) [0xd0]
+        ;;;
+        ;;; Load Zero-Page
+        ;;;
+        ;;; Pushes the value at an address within the first 256 bytes of memory,
+        ;;; to the top of the stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.load8_u (local.get $t)))
         (br $loop)
 
-        );; STZkr
+        );;
+        ;;; STZkr (val addr8 -- val addr8 ) [0xd1]
+        ;;;
+        ;;; Store Zero-Page
+        ;;;
+        ;;; Writes a value to an address within the first 256 bytes of memory.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (i32.store8 (local.get $t) (local.get $n))
         (br $loop)
 
-        );; LDRkr
+        );;
+        ;;; LDRkr (addr8 -- addr8 value) [0xd2]
+        ;;;
+        ;;; Load Relative
+        ;;;
+        ;;; Pushes a value at a relative address in relation to the PC, within
+        ;;; a range between -128 and +127 bytes, to the top of the stack.
+        ;;;
         (local.set $t (i32.load8_s offset=0x100100 (local.get $rstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.load8_u (i32.add (local.get $pc) (local.get $t))))
         (br $loop)
 
-        );; STRkr
+        );;
+        ;;; STRkr (val addr8 -- val addr8 ) [0xd3]
+        ;;;
+        ;;; Store Relative
+        ;;;
+        ;;; Writes a value to a relative address in relation to the PC, within
+        ;;; a range between -128 and +127 bytes.
+        ;;;
         (local.set $t (i32.load8_s offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (i32.store8 (i32.add (local.get $pc) (local.get $t)) (local.get $n))
         (br $loop)
 
-        );; LDAkr
+        );;
+        ;;; LDAkr (addr16 -- addr16 value) [0xd4]
+        ;;;
+        ;;; Load Absolute
+        ;;;
+        ;;; Pushes the value at a absolute address, to the top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.load8_u (local.get $t)))
         (br $loop)
 
-        );; STAkr
+        );;
+        ;;; STAkr (val addr16 -- val addr16 ) [0xd5]
+        ;;;
+        ;;; Store Absolute
+        ;;;
+        ;;; Writes a value to a absolute address.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))))
         (i32.store8 (local.get $t) (local.get $n))
         (br $loop)
 
-        );; DEIkr
+        );;
+        ;;; DEIkr (device8 -- device8 value) [0xd6]
+        ;;;
+        ;;; Device Input
+        ;;;
+        ;;; Pushes a value from the device page, to the top of the stack. The
+        ;;; target device might capture the reading to trigger an I/O event.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (call $dei (local.get $t)))
         (br $loop)
 
-        );; DEOkr
+        );;
+        ;;; DEOkr (val device8 -- val device8 ) [0xd7]
+        ;;;
+        ;;; Device Output
+        ;;;
+        ;;; Writes a value to the device page. The target device might capture
+        ;;; the writing to trigger an I/O event.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (i32.store8 offset=0x100200 (local.get $t) (local.get $n))
         (call $deo (local.get $t) (local.get $n))
         (br $loop)
 
-        );; ADDkr
+        );;
+        ;;; ADDkr (a b -- a b a+b) [0xd8]
+        ;;;
+        ;;; Add
+        ;;;
+        ;;; Pushes the sum of the two values at the top of the stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.add (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; SUBkr
+        );;
+        ;;; SUBkr (a b -- a b a-b) [0xd9]
+        ;;;
+        ;;; Subtract
+        ;;;
+        ;;; Pushes the difference of the first value minus the second, to the
+        ;;; top of the stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.sub (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; MULkr
+        );;
+        ;;; MULkr (a b -- a b a*b) [0xda]
+        ;;;
+        ;;; Multiply
+        ;;;
+        ;;; Pushes the product of the first and second values at the top of the
+        ;;; stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.mul (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; DIVkr
+        );;
+        ;;; DIVkr (a b -- a b a/b) [0xdb]
+        ;;;
+        ;;; Divide
+        ;;;
+        ;;; Pushes the quotient of the first value over the second, to the top
+        ;;; of the stack. A division by zero pushes zero on the stack. The rounding
+        ;;; direction is toward zero.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (if (result i32) (i32.eqz (local.get $t)) (then (i32.const 0)) (else (i32.div_u (local.get $n) (local.get $t)))))
         (br $loop)
 
-        );; ANDkr
+        );;
+        ;;; ANDkr (a b -- a b a&b) [0xdc]
+        ;;;
+        ;;; And
+        ;;;
+        ;;; Pushes the result of the bitwise operation AND, to the top of the
+        ;;; stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.and (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; ORAkr
+        );;
+        ;;; ORAkr (a b -- a b a|b) [0xdd]
+        ;;;
+        ;;; Or
+        ;;;
+        ;;; Pushes the result of the bitwise operation OR, to the top of the stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.or (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; EORkr
+        );;
+        ;;; EORkr (a b -- a b a^b) [0xde]
+        ;;;
+        ;;; Exclusive Or
+        ;;;
+        ;;; Pushes the result of the bitwise operation XOR, to the top of the
+        ;;; stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.xor (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; SFTkr
+        );;
+        ;;; SFTkr (a shift8 -- a shift8 c) [0xdf]
+        ;;;
+        ;;; Shift
+        ;;;
+        ;;; Shifts the bits of the second value of the stack to the left or right,
+        ;;; depending on the control value at the top of the stack. The high nibble
+        ;;; of the control value indicates how many bits to shift left, and the
+        ;;; low nibble how many bits to shift right. The rightward shift is done
+        ;;; first.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.shl (i32.shr_u (local.get $n) (i32.and (local.get $t) (i32.const 0xf))) (i32.shr_u (local.get $t) (i32.const 4))))
         (br $loop)
 
-        );; LIT2r
+        );;
+        ;;; LIT2r ( --  a) [0xe0]
+        ;;;
+        ;;; Literal
+        ;;;
+        ;;; Pushes the next bytes in memory, and moves the PC+2. The LIT opcode
+        ;;; always has the keep mode active. Notice how the 0x00 opcode, with
+        ;;; the keep bit toggled, is the location of the literal opcodes.
+        ;;;
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.get $pc)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.load8_u (i32.and (i32.add (local.get $pc) (i32.const 1)) (i32.const 0xffff))))
         (local.set $pc (i32.add (local.get $pc) (i32.const 2)))
         (br $loop)
 
-        );; INC2kr
+        );;
+        ;;; INC2kr (a -- a a+1) [0xe1]
+        ;;;
+        ;;; Increment
+        ;;;
+        ;;; Increments the value at the top of the stack, by 1.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.and (local.tee $val (i32.add (local.get $t) (i32.const 1))) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; POP2kr
+        );;
+        ;;; POP2kr (a -- a ) [0xe2]
+        ;;;
+        ;;; Pop
+        ;;;
+        ;;; Removes the value at the top of the stack.
+        ;;;
         (br $loop)
 
-        );; NIP2kr
+        );;
+        ;;; NIP2kr (a b -- a b b) [0xe3]
+        ;;;
+        ;;; Nip
+        ;;;
+        ;;; Removes the second value from the stack. This is practical to convert
+        ;;; a short into a byte.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.and (local.tee $val (local.get $t)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; SWP2kr
+        );;
+        ;;; SWP2kr (a b -- a b b a) [0xe4]
+        ;;;
+        ;;; Swap
+        ;;;
+        ;;; Exchanges the first and second values at the top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 252)) (i32.const 0xff)))
@@ -1701,7 +3475,14 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; ROT2kr
+        );;
+        ;;; ROT2kr (a b c -- a b c b c a) [0xe5]
+        ;;;
+        ;;; Rotate
+        ;;;
+        ;;; Rotates three values at the top of the stack, to the left, wrapping
+        ;;; around.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $l (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 4)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 5)) (i32.const 0xff))) (i32.const 8))))
@@ -1714,7 +3495,13 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 5)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; DUP2kr
+        );;
+        ;;; DUP2kr (a -- a a a) [0xe6]
+        ;;;
+        ;;; Duplicate
+        ;;;
+        ;;; Duplicates the value at the top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 252)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.and (local.tee $val (local.get $t)) (i32.const 0xff)))
@@ -1723,7 +3510,13 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; OVR2kr
+        );;
+        ;;; OVR2kr (a b -- a b a b a) [0xe7]
+        ;;;
+        ;;; Over
+        ;;;
+        ;;; Duplicates the second value at the top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 250)) (i32.const 0xff)))
@@ -1735,46 +3528,97 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 5)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; EQU2kr
+        );;
+        ;;; EQU2kr (a b -- a b bool8) [0xe8]
+        ;;;
+        ;;; Equal
+        ;;;
+        ;;; Pushes 01 to the stack if the two values at the top of the stack are
+        ;;; equal, 00 otherwise.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.eq (local.get $t) (local.get $n)))
         (br $loop)
 
-        );; NEQ2kr
+        );;
+        ;;; NEQ2kr (a b -- a b bool8) [0xe9]
+        ;;;
+        ;;; Not Equal
+        ;;;
+        ;;; Pushes 01 to the stack if the two values at the top of the stack are
+        ;;; not equal, 00 otherwise.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.ne (local.get $t) (local.get $n)))
         (br $loop)
 
-        );; GTH2kr
+        );;
+        ;;; GTH2kr (a b -- a b bool8) [0xea]
+        ;;;
+        ;;; Greater Than
+        ;;;
+        ;;; Pushes 01 to the stack if the second value at the top of the stack
+        ;;; is greater than the value at the top of the stack, 00 otherwise.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.gt_u (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; LTH2kr
+        );;
+        ;;; LTH2kr (a b -- a b bool8) [0xeb]
+        ;;;
+        ;;; Lesser Than
+        ;;;
+        ;;; Pushes 01 to the stack if the second value at the top of the stack
+        ;;; is lesser than the value at the top of the stack, 00 otherwise.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 255)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.lt_u (local.get $n) (local.get $t)))
         (br $loop)
 
-        );; JMP2kr
+        );;
+        ;;; JMP2kr (addr -- addr ) [0xec]
+        ;;;
+        ;;; Jump
+        ;;;
+        ;;; Moves the PC by a relative distance equal to the signed byte on the
+        ;;; top of the stack, or to an absolute address in short mode.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $pc (local.get $t))
         (br $loop)
 
-        );; JCN2kr
+        );;
+        ;;; JCN2kr (cond8 addr -- cond8 addr ) [0xed]
+        ;;;
+        ;;; Jump Conditional
+        ;;;
+        ;;; If the byte preceeding the address is not 00, moves the PC by a signed
+        ;;; value equal to the byte on the top of the stack, or to an absolute
+        ;;; address in short mode.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))))
         (local.set $pc (select (local.get $t) (local.get $pc) (local.get $n)))
         (br $loop)
 
-        );; JSR2kr
+        );;
+        ;;; JSR2kr (addr -- addr | ret16) [0xee]
+        ;;;
+        ;;; Jump Stash Return
+        ;;;
+        ;;; Pushes the PC to the return-stack and moves the PC by a signed value
+        ;;; equal to the byte on the top of the stack, or to an absolute address
+        ;;; in short mode.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.and (local.tee $val (local.get $pc)) (i32.const 0xff)))
@@ -1782,21 +3626,42 @@
         (local.set $pc (local.get $t))
         (br $loop)
 
-        );; STH2kr
+        );;
+        ;;; STH2kr (a -- a | a) [0xef]
+        ;;;
+        ;;; Stash
+        ;;;
+        ;;; Moves the value at the top of the stack to the return stack. Note
+        ;;; that with the r-mode, the stacks are exchanged and the value is moved
+        ;;; from the return stack to the working stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $wstp (i32.and (i32.add (local.get $wstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (local.get $wstp) (i32.and (local.tee $val (local.get $t)) (i32.const 0xff)))
         (i32.store8 offset=0x100000 (i32.and (i32.add (local.get $wstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; LDZ2kr
+        );;
+        ;;; LDZ2kr (addr8 -- addr8 value) [0xf0]
+        ;;;
+        ;;; Load Zero-Page
+        ;;;
+        ;;; Pushes the value at an address within the first 256 bytes of memory,
+        ;;; to the top of the stack.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.get $t)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.load8_u (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xff))))
         (br $loop)
 
-        );; STZ2kr
+        );;
+        ;;; STZ2kr (val addr8 -- val addr8 ) [0xf1]
+        ;;;
+        ;;; Store Zero-Page
+        ;;;
+        ;;; Writes a value to an address within the first 256 bytes of memory.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $l (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))))
@@ -1804,14 +3669,28 @@
         (i32.store8 (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xff)) (local.get $n))
         (br $loop)
 
-        );; LDR2kr
+        );;
+        ;;; LDR2kr (addr8 -- addr8 value) [0xf2]
+        ;;;
+        ;;; Load Relative
+        ;;;
+        ;;; Pushes a value at a relative address in relation to the PC, within
+        ;;; a range between -128 and +127 bytes, to the top of the stack.
+        ;;;
         (local.set $t (i32.load8_s offset=0x100100 (local.get $rstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.tee $mval (i32.add (local.get $pc) (local.get $t)))))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.load8_u (i32.and (i32.add (local.get $mval) (i32.const 1)) (i32.const 0xffff))))
         (br $loop)
 
-        );; STR2kr
+        );;
+        ;;; STR2kr (val addr8 -- val addr8 ) [0xf3]
+        ;;;
+        ;;; Store Relative
+        ;;;
+        ;;; Writes a value to a relative address in relation to the PC, within
+        ;;; a range between -128 and +127 bytes.
+        ;;;
         (local.set $t (i32.load8_s offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $l (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))))
@@ -1819,14 +3698,26 @@
         (i32.store8 (i32.and (i32.add (local.get $mval) (i32.const 1)) (i32.const 0xffff)) (local.get $n))
         (br $loop)
 
-        );; LDA2kr
+        );;
+        ;;; LDA2kr (addr16 -- addr16 value) [0xf4]
+        ;;;
+        ;;; Load Absolute
+        ;;;
+        ;;; Pushes the value at a absolute address, to the top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.load8_u (local.get $t)))
         (i32.store8 offset=0x100100 (local.get $rstp) (i32.load8_u (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xffff))))
         (br $loop)
 
-        );; STA2kr
+        );;
+        ;;; STA2kr (val addr16 -- val addr16 ) [0xf5]
+        ;;;
+        ;;; Store Absolute
+        ;;;
+        ;;; Writes a value to a absolute address.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))))
         (local.set $l (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))))
@@ -1834,14 +3725,28 @@
         (i32.store8 (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xffff)) (local.get $n))
         (br $loop)
 
-        );; DEI2kr
+        );;
+        ;;; DEI2kr (device8 -- device8 value) [0xf6]
+        ;;;
+        ;;; Device Input
+        ;;;
+        ;;; Pushes a value from the device page, to the top of the stack. The
+        ;;; target device might capture the reading to trigger an I/O event.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
         (i32.store8 offset=0x100100 (local.get $rstp) (call $dei (i32.and (i32.add (local.get $t) (i32.const 1)) (i32.const 0xff))))
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (call $dei (local.get $t)))
         (br $loop)
 
-        );; DEO2kr
+        );;
+        ;;; DEO2kr (val device8 -- val device8 ) [0xf7]
+        ;;;
+        ;;; Device Output
+        ;;;
+        ;;; Writes a value to the device page. The target device might capture
+        ;;; the writing to trigger an I/O event.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))))
         (local.set $l (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))))
@@ -1851,7 +3756,13 @@
         (call $deo (local.get $t) (local.get $n))
         (br $loop)
 
-        );; ADD2kr
+        );;
+        ;;; ADD2kr (a b -- a b a+b) [0xf8]
+        ;;;
+        ;;; Add
+        ;;;
+        ;;; Pushes the sum of the two values at the top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
@@ -1859,7 +3770,14 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; SUB2kr
+        );;
+        ;;; SUB2kr (a b -- a b a-b) [0xf9]
+        ;;;
+        ;;; Subtract
+        ;;;
+        ;;; Pushes the difference of the first value minus the second, to the
+        ;;; top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
@@ -1867,7 +3785,14 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; MUL2kr
+        );;
+        ;;; MUL2kr (a b -- a b a*b) [0xfa]
+        ;;;
+        ;;; Multiply
+        ;;;
+        ;;; Pushes the product of the first and second values at the top of the
+        ;;; stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
@@ -1875,7 +3800,15 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; DIV2kr
+        );;
+        ;;; DIV2kr (a b -- a b a/b) [0xfb]
+        ;;;
+        ;;; Divide
+        ;;;
+        ;;; Pushes the quotient of the first value over the second, to the top
+        ;;; of the stack. A division by zero pushes zero on the stack. The rounding
+        ;;; direction is toward zero.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
@@ -1883,7 +3816,14 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; AND2kr
+        );;
+        ;;; AND2kr (a b -- a b a&b) [0xfc]
+        ;;;
+        ;;; And
+        ;;;
+        ;;; Pushes the result of the bitwise operation AND, to the top of the
+        ;;; stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
@@ -1891,7 +3831,13 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; ORA2kr
+        );;
+        ;;; ORA2kr (a b -- a b a|b) [0xfd]
+        ;;;
+        ;;; Or
+        ;;;
+        ;;; Pushes the result of the bitwise operation OR, to the top of the stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
@@ -1899,7 +3845,14 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; EOR2kr
+        );;
+        ;;; EOR2kr (a b -- a b a^b) [0xfe]
+        ;;;
+        ;;; Exclusive Or
+        ;;;
+        ;;; Pushes the result of the bitwise operation XOR, to the top of the
+        ;;; stack.
+        ;;;
         (local.set $t (i32.or (i32.load8_u offset=0x100100 (local.get $rstp)) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.const 8))))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 3)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
@@ -1907,7 +3860,17 @@
         (i32.store8 offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff)) (i32.shr_u (local.get $val) (i32.const 8)))
         (br $loop)
 
-        );; SFT2kr
+        );;
+        ;;; SFT2kr (a shift8 -- a shift8 c) [0xff]
+        ;;;
+        ;;; Shift
+        ;;;
+        ;;; Shifts the bits of the second value of the stack to the left or right,
+        ;;; depending on the control value at the top of the stack. The high nibble
+        ;;; of the control value indicates how many bits to shift left, and the
+        ;;; low nibble how many bits to shift right. The rightward shift is done
+        ;;; first.
+        ;;;
         (local.set $t (i32.load8_u offset=0x100100 (local.get $rstp)))
         (local.set $n (i32.or (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 1)) (i32.const 0xff))) (i32.shl (i32.load8_u offset=0x100100 (i32.and (i32.add (local.get $rstp) (i32.const 2)) (i32.const 0xff))) (i32.const 8))))
         (local.set $rstp (i32.and (i32.add (local.get $rstp) (i32.const 254)) (i32.const 0xff)))
