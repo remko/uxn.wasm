@@ -13,7 +13,7 @@ void w2c_system_deo(struct w2c_system *sys, u32 port, u32 value) {
   // Console
   if (port == 0x18) {
     fputc(value, stdout);
-  } else if (port == 0x18) {
+  } else if (port == 0x19) {
     fputc(value, stderr);
   }
 }
@@ -27,6 +27,8 @@ int main(int argc, char **argv) {
     printf("missing rom\n");
     return 1;
   }
+
+  // Open ROM
   FILE *file = fopen(argv[1], "rb");
   if (file == NULL) {
     printf("error opening file\n");
@@ -36,6 +38,7 @@ int main(int argc, char **argv) {
   long filesize = ftell(file);
   fseek(file, 0, SEEK_SET);
 
+  // Initialize wasm2c
   wasm_rt_init();
   w2c_uxn uxn;
   w2c_system sys;

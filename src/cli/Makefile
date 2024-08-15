@@ -61,13 +61,16 @@ endif # $(OS)
 .PHONY: all
 all: uxn-wasm-cli
 
-uxn-wasm-cli: cli_core.o cli.o wasm-rt-impl.o
+uxn-wasm-cli: cli_core.o cli.o wasm-rt-impl.o wasm-rt-mem-impl.o
 	$(CC) $(CFLAGS) $(LINKFLAGS) -o $@ $^
 
 cli_core.c cli_core.h: ../../build/uxn.wasm
 	wasm2c $< -o cli_core.c
 
 wasm-rt-impl.o: $(WABT_DATA_DIR)/wasm2c/wasm-rt-impl.c
+	$(CC) -c $(CFLAGS) -o $@ $<
+
+wasm-rt-mem-impl.o: $(WABT_DATA_DIR)/wasm2c/wasm-rt-mem-impl.c
 	$(CC) -c $(CFLAGS) -o $@ $<
 
 ../../build/uxn.wasm: ../../src/uxn.wat
@@ -81,6 +84,9 @@ mandelbrot.rom: ../benchmarks/mandelbrot.tal
 
 primes32.rom: ../benchmarks/primes32.tal
 	cd ../benchmarks && $(UXNASM) $(PWD)/$< $(PWD)/$@
+
+fib.rom: ../benchmarks/fib.tal
+	$(UXNASM) $< $@
 
 test: uxn-wasm-cli opctest.rom
 	./uxn-wasm-cli opctest.rom | tee opctest.log
