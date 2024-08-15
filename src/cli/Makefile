@@ -61,7 +61,7 @@ endif # $(OS)
 .PHONY: all
 all: uxn-wasm-cli
 
-uxn-wasm-cli: cli_core.o cli.o wasm-rt-impl.o wasm-rt-mem-impl.o
+uxn-wasm-cli: cli_core.o cli.o wasm-rt-impl.o 
 	$(CC) $(CFLAGS) $(LINKFLAGS) -o $@ $^
 
 cli_core.c cli_core.h: ../../build/uxn.wasm
